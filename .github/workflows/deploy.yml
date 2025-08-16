@@ -1,0 +1,193 @@
+name: Deploy
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy to'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+          - staging
+          - production
+      force:
+        description: 'Force deployment (skip tests)'
+        required: false
+        default: false
+        type: boolean
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    if: github.event.inputs.force != 'true'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+
+      - name: Cache dependencies
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
+
+      - name: Run tests
+        run: cargo test --all-features --verbose
+
+      - name: Run integration tests
+        run: cargo test --test integration --verbose
+
+      - name: Build release
+        run: cargo build --release
+
+  deploy-staging:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    needs: test
+    if: github.event.inputs.environment == 'staging' || (github.ref == 'refs/heads/main' && github.event.inputs.environment != 'production')
+    environment: staging
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: docker/Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository }}:staging
+            ghcr.io/${{ github.repository }}:${{ github.sha }}
+          labels: |
+            org.opencontainers.image.source=${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.version=staging
+
+      - name: Deploy to staging environment
+        run: |
+          echo "Deploying to staging environment..."
+          # Add your staging deployment logic here
+          # Examples:
+          # - kubectl apply -f k8s/staging/
+          # - docker-compose -f docker/docker-compose.staging.yml up -d
+          # - ssh user@staging-server "cd /app && docker-compose pull && docker-compose up -d"
+
+      - name: Health check
+        run: |
+          echo "Performing health check..."
+          # Add health check logic here
+          # Examples:
+          # - curl -f http://staging.example.com/health
+          # - docker-compose -f docker/docker-compose.staging.yml ps
+
+  deploy-production:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: test
+    if: github.event.inputs.environment == 'production'
+    environment: production
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: docker/Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository }}:latest
+            ghcr.io/${{ github.repository }}:production
+            ghcr.io/${{ github.repository }}:${{ github.sha }}
+          labels: |
+            org.opencontainers.image.source=${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.version=production
+
+      - name: Deploy to production environment
+        run: |
+          echo "Deploying to production environment..."
+          # Add your production deployment logic here
+          # Examples:
+          # - kubectl apply -f k8s/production/
+          # - docker-compose -f docker/docker-compose.production.yml up -d
+          # - ssh user@prod-server "cd /app && docker-compose pull && docker-compose up -d"
+
+      - name: Health check
+        run: |
+          echo "Performing health check..."
+          # Add health check logic here
+          # Examples:
+          # - curl -f https://example.com/health
+          # - docker-compose -f docker/docker-compose.production.yml ps
+
+      - name: Notify deployment
+        run: |
+          echo "Production deployment completed successfully!"
+          # Add notification logic here
+          # Examples:
+          # - curl -X POST ${{ secrets.SLACK_WEBHOOK }} -d '{"text":"Production deployment completed"}'
+          # - curl -X POST ${{ secrets.DISCORD_WEBHOOK }} -d '{"content":"Production deployment completed"}'
+
+  rollback:
+    name: Rollback
+    runs-on: ubuntu-latest
+    if: failure()
+    environment: production
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Rollback deployment
+        run: |
+          echo "Deployment failed, initiating rollback..."
+          # Add rollback logic here
+          # Examples:
+          # - kubectl rollout undo deployment/uniswap-relay-dapp
+          # - docker-compose -f docker/docker-compose.production.yml up -d --force-recreate
+
+      - name: Notify rollback
+        run: |
+          echo "Rollback completed"
+          # Add notification logic here 

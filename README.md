@@ -78,7 +78,7 @@ python3 scripts/redis-listener.py
 ┌─────────────────┐    ┌─────────────────┐
 │ Uniswap V2      │    │ Uniswap V3      │
 │ Subgraph        │    │ Subgraph        │
-└─────────┬───────┘    └─────────┬───────┘             ...
+└─────────┬───────┘    └─────────┬───────┘
           │                      │
           └──────────────────────┼──────────────────────┘
                                  │
@@ -117,6 +117,7 @@ uniswap_relay_dapp/
 │   └── error.rs             # Error handling
 ├── config/                  # Configuration files
 ├── tests/                   # Integration tests
+├── .github/workflows/       # GitHub Actions
 └── docker/                  # Containerization
 ```
 
@@ -147,6 +148,103 @@ connection_pool_size = 10
 log_level = "info"
 environment = "development"
 worker_threads = 4
+```
+
+## 🚀 GitHub Actions
+
+This project includes comprehensive GitHub Actions workflows for CI/CD, security, and deployment.
+
+### Workflows
+
+#### 🔄 CI (`ci.yml`)
+- **Multi-Rust Testing**: Tests on Rust 1.75, stable, and nightly
+- **Code Quality**: Formatting, clippy, and linting checks
+- **Testing**: Unit and integration tests
+- **Build Verification**: Release builds and binary size checks
+- **Docker**: Container build and testing
+
+#### 🚀 Release (`release.yml`)
+- **Multi-Platform Builds**: Linux (x86_64, aarch64), macOS (x86_64, aarch64), Windows
+- **Docker Publishing**: Multi-arch Docker images to Docker Hub
+- **GitHub Releases**: Automated release creation with artifacts
+- **Checksums**: SHA256 verification files for all binaries
+
+#### 🔒 Security (`security.yml`)
+- **Vulnerability Scanning**: Cargo audit, Trivy, CodeQL
+- **Dependency Analysis**: OWASP dependency check
+- **License Compliance**: Automated license checking
+- **Secret Detection**: Gitleaks for credential scanning
+- **Daily Scans**: Automated security monitoring
+
+#### 📦 Dependencies (`dependencies.yml`)
+- **Automated Updates**: Weekly dependency updates
+- **Smart Updates**: Patch, minor, or major version control
+- **Pull Request Creation**: Automated PRs for dependency updates
+- **Manual Triggers**: On-demand dependency updates
+
+#### 🚀 Deploy (`deploy.yml`)
+- **Environment Management**: Staging and production deployments
+- **Docker Registry**: GitHub Container Registry integration
+- **Health Checks**: Post-deployment verification
+- **Rollback Support**: Automatic rollback on failures
+- **Notifications**: Deployment status alerts
+
+### Setup
+
+#### Required Secrets
+```bash
+# For Docker Hub publishing
+DOCKERHUB_USERNAME=your_username
+DOCKERHUB_TOKEN=your_token
+
+# For notifications (optional)
+SLACK_WEBHOOK=your_slack_webhook
+DISCORD_WEBHOOK=your_discord_webhook
+```
+
+#### Environment Protection
+1. Go to Repository Settings → Environments
+2. Create `staging` and `production` environments
+3. Add required reviewers for production deployments
+4. Configure environment-specific secrets
+
+#### Workflow Triggers
+- **CI**: Runs on every push and PR
+- **Release**: Triggers on version tags (`v*`)
+- **Security**: Daily scans + PR/push triggers
+- **Dependencies**: Weekly + manual triggers
+- **Deploy**: Main branch pushes + manual triggers
+
+### Local Development
+
+#### Pre-commit Checks
+```bash
+# Format code
+cargo fmt
+
+# Run clippy
+cargo clippy --all-targets --all-features -- -D warnings
+
+# Run tests
+cargo test --all-features
+
+# Check security
+cargo audit
+
+# Build release
+cargo build --release
+```
+
+#### Docker Development
+```bash
+# Build image
+docker build -f docker/Dockerfile -t uniswap-relay-dapp:dev .
+
+# Run with docker-compose
+docker-compose -f docker/docker-compose.yml up -d
+
+# View logs
+docker-compose -f docker/docker-compose.yml logs -f
 ```
 
 ## 📊 Monitoring & Metrics
@@ -194,6 +292,8 @@ docker-compose -f docker/docker-compose.yml up -d
 - No hardcoded secrets
 - Rate limiting on subgraph queries
 - Input validation
+- Automated security scanning
+- Regular dependency updates
 
 ## 🤝 Contributing
 
@@ -202,6 +302,13 @@ docker-compose -f docker/docker-compose.yml up -d
 3. Add tests
 4. Ensure CI passes
 5. Submit PR
+
+### Development Guidelines
+- Follow Rust coding standards
+- Add tests for new functionality
+- Update documentation
+- Run security scans locally
+- Use conventional commit messages
 
 ## 📄 License
 
