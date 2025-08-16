@@ -19,9 +19,6 @@ use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    // Initialize logging
-    init_logging()?;
-
     info!("Starting Uniswap Relay DApp (Subgraph-only)...");
 
     // Load configuration
@@ -30,9 +27,17 @@ async fn main() -> Result<()> {
         crate::error::DAppError::Config(e.to_string())
     })?;
 
+    // Initialize logging
+    init_logging(&config)?;
+
     // Validate configuration
     if let Err(e) = config.validate() {
-        error!("Configuration validation failed: {}", e);
+        error!("Basic configuration validation failed: {}", e);
+        std::process::exit(1);
+    }
+    
+    if let Err(e) = config.validate_comprehensive() {
+        error!("Comprehensive configuration validation failed: {}", e);
         std::process::exit(1);
     }
 
@@ -54,6 +59,14 @@ async fn main() -> Result<()> {
 
     // Initialize metrics collector
     let metrics_collector = MetricsCollector::new(config.clone());
+    
+    // Start health checks if enabled
+    if config.monitoring.enable_health_checks {
+        let health_collector = metrics_collector.clone();
+        tokio::spawn(async move {
+            health_collector.start_health_checks().await;
+        });
+    }
 
     // Initialize swap event collector
     let mut swap_collector = SwapEventCollector::new(
@@ -67,6 +80,8 @@ async fn main() -> Result<()> {
     swap_collector.start_collecting().await?;
 
     info!("Uniswap Relay DApp started successfully");
+    info!("Environment: {}", if config.is_production() { "PRODUCTION" } else { "DEVELOPMENT" });
+    info!("Configuration: {}", swap_collector.get_config_summary());
 
     // Wait for shutdown signal
     wait_for_shutdown().await;
@@ -81,9 +96,9 @@ async fn main() -> Result<()> {
 }
 
 /// Initialize logging with structured JSON output
-fn init_logging() -> Result<()> {
-    let env_filter =
-        tracing_subscriber::EnvFilter::try_from_default_env().unwrap_or_else(|_| "info".into());
+fn init_logging(config: &AppConfig) -> Result<()> {
+    let env_filter = tracing_subscriber::EnvFilter::try_from_default_env()
+        .unwrap_or_else(|_| config.application.log_level.clone().into());
 
     let formatting_layer = tracing_subscriber::fmt::layer()
         .with_target(false)
@@ -98,7 +113,9 @@ fn init_logging() -> Result<()> {
         .with(formatting_layer)
         .init();
 
-    info!("Logging initialized");
+    info!("Logging initialized with level: {}, structured: {}", 
+          config.application.log_level, 
+          config.monitoring.enable_structured_logging);
     Ok(())
 }
 

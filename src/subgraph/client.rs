@@ -18,6 +18,10 @@ impl SubgraphClient {
         let client = Client::builder()
             .timeout(Duration::from_secs(config.subgraph.timeout_seconds))
             .build()
+            .map_err(|e| {
+                // Use Block error for client creation failures that might be block-related
+                crate::error::EthereumError::Block(format!("Failed to create HTTP client: {}", e))
+            })
             .expect("Failed to create HTTP client");
 
         Self { client, config }
@@ -63,13 +67,42 @@ impl SubgraphClient {
             .json(&request_body)
             .send()
             .await
-            .map_err(|e| DAppError::Subgraph(SubgraphError::Http(e.to_string())))?;
+            .map_err(|e| {
+                // Check if this looks like a WebSocket error
+                if e.to_string().contains("websocket") || e.to_string().contains("ws://") || e.to_string().contains("wss://") {
+                    DAppError::Network(crate::error::NetworkError::websocket_error(format!("WebSocket error in subgraph request: {}", e)))
+                }
+                // Check if this looks like a DNS resolution error
+                else if e.to_string().contains("dns") || e.to_string().contains("resolve") || e.to_string().contains("lookup") {
+                    DAppError::Network(crate::error::NetworkError::dns_resolution_error(format!("DNS resolution error in subgraph request: {}", e)))
+                }
+                // Check if this looks like a TLS error
+                else if e.to_string().contains("tls") || e.to_string().contains("ssl") || e.to_string().contains("certificate") {
+                    DAppError::Network(crate::error::NetworkError::tls_error(format!("TLS error in subgraph request: {}", e)))
+                }
+                // Check if this looks like a Solana RPC error
+                else if e.to_string().contains("solana") || e.to_string().contains("rpc") {
+                    DAppError::Solana(crate::error::SolanaError::rpc_error(format!("Solana RPC error: {}", e)))
+                } else {
+                    DAppError::Subgraph(SubgraphError::Http(e.to_string()))
+                }
+            })?;
 
         if !response.status().is_success() {
-            return Err(DAppError::Subgraph(SubgraphError::Http(format!(
-                "HTTP error: {}",
-                response.status()
-            ))));
+            let status = response.status();
+            return if status.as_u16() == 429 {
+                Err(DAppError::Subgraph(SubgraphError::RateLimit))
+            } else if status.as_u16() == 408 {
+                Err(DAppError::Subgraph(SubgraphError::Timeout(format!(
+                    "HTTP timeout: {}",
+                    status
+                ))))
+            } else {
+                Err(DAppError::Subgraph(SubgraphError::Http(format!(
+                    "HTTP error: {}",
+                    status
+                ))))
+            };
         }
 
         let response_text = response
@@ -85,6 +118,15 @@ impl SubgraphClient {
             if !errors.is_empty() {
                 let error_messages: Vec<String> =
                     errors.iter().map(|e| e.message.clone()).collect();
+
+                // Check for Solana instruction errors in GraphQL response
+                for error_msg in &error_messages {
+                    if error_msg.contains("solana") && error_msg.contains("instruction") {
+                        return Err(DAppError::Solana(crate::error::SolanaError::Instruction(
+                            format!("Solana instruction error in GraphQL: {}", error_msg)
+                        )));
+                    }
+                }
 
                 return Err(DAppError::Subgraph(SubgraphError::GraphQL(
                     error_messages.join("; "),

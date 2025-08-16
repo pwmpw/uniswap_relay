@@ -54,6 +54,7 @@ pub enum EthereumError {
     Transaction(String),
 
     #[error("WebSocket error: {0}")]
+    #[allow(dead_code)]
     WebSocket(String),
 
     #[error("Invalid address: {0}")]
@@ -163,6 +164,78 @@ pub enum SerializationError {
 }
 
 pub type Result<T> = std::result::Result<T, DAppError>;
+
+// Helper methods to construct specific error variants
+impl SolanaError {
+    pub fn rpc_error(message: impl Into<String>) -> Self {
+        SolanaError::Rpc(message.into())
+    }
+
+    pub fn program_error(message: impl Into<String>) -> Self {
+        SolanaError::Program(message.into())
+    }
+
+    pub fn transaction_error(message: impl Into<String>) -> Self {
+        SolanaError::Transaction(message.into())
+    }
+
+    pub fn account_error(message: impl Into<String>) -> Self {
+        SolanaError::Account(message.into())
+    }
+
+    pub fn instruction_error(message: impl Into<String>) -> Self {
+        SolanaError::Instruction(message.into())
+    }
+
+    pub fn invalid_public_key(message: impl Into<String>) -> Self {
+        SolanaError::InvalidPublicKey(message.into())
+    }
+
+    pub fn commitment_error(message: impl Into<String>) -> Self {
+        SolanaError::Commitment(message.into())
+    }
+}
+
+impl RedisError {
+    pub fn subscribe_error(message: impl Into<String>) -> Self {
+        RedisError::Subscribe(message.into())
+    }
+
+    pub fn timeout_error(message: impl Into<String>) -> Self {
+        RedisError::Timeout(message.into())
+    }
+}
+
+impl NetworkError {
+    pub fn websocket_error(message: impl Into<String>) -> Self {
+        NetworkError::WebSocket(message.into())
+    }
+
+    pub fn dns_resolution_error(message: impl Into<String>) -> Self {
+        NetworkError::DnsResolution(message.into())
+    }
+
+    pub fn tls_error(message: impl Into<String>) -> Self {
+        NetworkError::Tls(message.into())
+    }
+}
+
+impl SerializationError {
+    #[allow(dead_code)]
+    pub fn borsh_error(message: impl Into<String>) -> Self {
+        SerializationError::Borsh(message.into())
+    }
+
+    #[allow(dead_code)]
+    pub fn hex_error(message: impl Into<String>) -> Self {
+        SerializationError::Hex(message.into())
+    }
+
+    #[allow(dead_code)]
+    pub fn base64_error(message: impl Into<String>) -> Self {
+        SerializationError::Base64(message.into())
+    }
+}
 
 impl From<std::io::Error> for DAppError {
     fn from(err: std::io::Error) -> Self {

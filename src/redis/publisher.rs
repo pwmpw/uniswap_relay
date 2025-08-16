@@ -36,6 +36,26 @@ impl RedisPublisher {
     /// Publish a single swap event
     #[allow(dead_code)]
     pub async fn publish_event(&self, event: &SwapEvent) -> Result<()> {
+        // Check for Solana-style public keys in event addresses
+        if event.token_in.address.len() == 44 && event.token_in.address.chars().all(|c| c.is_alphanumeric() || c == '_') {
+            return Err(crate::error::DAppError::Solana(crate::error::SolanaError::invalid_public_key(
+                "Solana-style public key found in token_in address".to_string()
+            )));
+        }
+        
+        if event.token_out.address.len() == 44 && event.token_out.address.chars().all(|c| c.is_alphanumeric() || c == '_') {
+            return Err(crate::error::DAppError::Solana(crate::error::SolanaError::invalid_public_key(
+                "Solana-style public key found in token_out address".to_string()
+            )));
+        }
+        
+        // Check for Solana account-related issues
+        if event.user_address.len() == 44 && event.user_address.chars().all(|c| c.is_alphanumeric() || c == '_') {
+            return Err(crate::error::DAppError::Solana(crate::error::SolanaError::account_error(
+                "Solana-style account address found in user_address".to_string()
+            )));
+        }
+        
         let event_json =
             serde_json::to_string(event).map_err(|e| RedisError::Serialization(e.to_string()))?;
 
@@ -44,6 +64,8 @@ impl RedisPublisher {
             self.channel, event.id
         );
 
+        let mut conn = (*self.connection_manager).clone();
+        
         let mut conn = (*self.connection_manager).clone();
         let result: RedisResult<()> = conn.publish(&self.channel, event_json).await;
 
@@ -54,7 +76,15 @@ impl RedisPublisher {
             }
             Err(e) => {
                 error!("Failed to publish event {}: {}", event.id, e);
-                Err(RedisError::Publish(e.to_string()).into())
+                
+                // Check if this is a timeout error
+                if e.to_string().contains("timeout") || e.to_string().contains("timed out") {
+                    Err(crate::error::DAppError::Redis(crate::error::RedisError::timeout_error(
+                        format!("Redis publish timeout for event {}: {}", event.id, e)
+                    )))
+                } else {
+                    Err(RedisError::Publish(e.to_string()).into())
+                }
             }
         }
     }
@@ -73,7 +103,10 @@ impl RedisPublisher {
         let mut pipe = redis::pipe();
         for event in events {
             let event_json = serde_json::to_string(event)
-                .map_err(|e| RedisError::Serialization(e.to_string()))?;
+                .map_err(|e| {
+                    // Use EventParsing error for JSON serialization failures
+                    crate::error::DAppError::Ethereum(crate::error::EthereumError::EventParsing(format!("Failed to serialize event to JSON: {}", e)))
+                })?;
             pipe.publish(&self.channel, event_json);
         }
 
@@ -86,7 +119,15 @@ impl RedisPublisher {
             }
             Err(e) => {
                 error!("Failed to publish batch: {}", e);
-                Err(RedisError::Publish(e.to_string()).into())
+                
+                // Check if this is a timeout error
+                if e.to_string().contains("timeout") || e.to_string().contains("timed out") {
+                    Err(crate::error::DAppError::Redis(crate::error::RedisError::timeout_error(
+                        format!("Redis batch publish timeout: {}", e)
+                    )))
+                } else {
+                    Err(RedisError::Publish(e.to_string()).into())
+                }
             }
         }
     }
@@ -98,6 +139,16 @@ impl RedisPublisher {
         mut event_receiver: mpsc::Receiver<SwapEvent>,
     ) -> Result<()> {
         info!("Starting Redis publisher for channel: {}", self.channel);
+
+        // Test if we can access the channel by checking if it exists
+        let mut conn = (*self.connection_manager).clone();
+        let channel_exists: RedisResult<bool> = conn.exists(&self.channel).await;
+        
+        if let Err(e) = channel_exists {
+            return Err(crate::error::DAppError::Redis(crate::error::RedisError::subscribe_error(
+                format!("Failed to check Redis channel {}: {}", self.channel, e)
+            )));
+        }
 
         while let Some(event) = event_receiver.recv().await {
             if let Err(e) = self.publish_event(&event).await {
@@ -124,7 +175,15 @@ impl RedisPublisher {
             }
             Err(e) => {
                 error!("Redis connection test failed: {}", e);
-                Err(RedisError::Connection(e.to_string()).into())
+                
+                // Check if this is a timeout error
+                if e.to_string().contains("timeout") || e.to_string().contains("timed out") {
+                    Err(crate::error::DAppError::Redis(crate::error::RedisError::timeout_error(
+                        format!("Redis connection test timeout: {}", e)
+                    )))
+                } else {
+                    Err(RedisError::Connection(e.to_string()).into())
+                }
             }
         }
     }

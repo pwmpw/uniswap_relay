@@ -449,6 +449,7 @@ ci: ## Run CI pipeline locally
 	@$(MAKE) clean
 	@$(MAKE) check-all
 	@$(MAKE) build-all
+	@$(MAKE) clippy
 	@$(MAKE) test
 	@$(MAKE) audit
 	@$(MAKE) docker-build
