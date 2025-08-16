@@ -1,12 +1,14 @@
 [subgraph]
-uniswap_v2_url = "https://api.thegraph.com/subgraphs/name/uniswap/uniswap-v2"
-uniswap_v3_url = "https://api.thegraph.com/subgraphs/name/uniswap/uniswap-v3"
+# Current Uniswap V2 subgraph endpoint (Ethereum mainnet)
+uniswap_v2_url = "https://gateway.thegraph.com/api/16ea198ba16011bac11cec9728b10908/subgraphs/name/uniswap/uniswap-v2"
+# Current Uniswap V3 subgraph endpoint (Ethereum mainnet)
+uniswap_v3_url = "https://gateway.thegraph.com/api/16ea198ba16011bac11cec9728b10908/subgraphs/name/uniswap/uniswap-v3"
 timeout_seconds = 30
 max_retries = 3
 polling_interval_seconds = 15
 
 [redis]
-url = "redis://localhost:6379"
+url = "redis://localhost:6380"
 channel = "swap_events"
 connection_pool_size = 10
 timeout_ms = 5000

@@ -29,7 +29,7 @@ RUSTUP := rustup
 
 # Docker
 DOCKER := docker
-DOCKER_COMPOSE := docker-compose
+DOCKER_COMPOSE := docker compose
 DOCKER_IMAGE := $(PROJECT_NAME)
 DOCKER_TAG := $(VERSION)
 
@@ -45,28 +45,18 @@ CARGO_BUILD_FLAGS := --release
 CARGO_CLIPPY_FLAGS := --all-targets --all-features -- -D warnings
 CARGO_FMT_FLAGS := --all -- --check
 
-# Colors for output
-RED := \033[0;31m
-GREEN := \033[0;32m
-YELLOW := \033[1;33m
-BLUE := \033[0;34m
-PURPLE := \033[0;35m
-CYAN := \033[0;36m
-WHITE := \033[1;37m
-NC := \033[0m # No Color
-
 # Help target
 .PHONY: help
 help: ## Show this help message
-	@echo "$(CYAN)Uniswap Relay DApp - Available Targets$(NC)"
-	@echo "$(CYAN)=====================================$(NC)"
-	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "$(GREEN)%-20s$(NC) %s\n", $$1, $$2}' $(MAKEFILE_LIST)
+	@echo "Uniswap Relay DApp - Available Targets"
+	@echo "====================================="
+	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "%-20s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 	@echo ""
-	@echo "$(YELLOW)Environment Variables:$(NC)"
+	@echo "Environment Variables:"
 	@echo "  ENV=development|production  Configuration environment (default: development)"
 	@echo "  VERSION=tag                 Override version (default: git tag)"
 	@echo ""
-	@echo "$(YELLOW)Examples:$(NC)"
+	@echo "Examples:"
 	@echo "  make build ENV=production"
 	@echo "  make test VERSION=v1.0.0"
 	@echo "  make docker-build DOCKER_TAG=latest"
@@ -74,226 +64,226 @@ help: ## Show this help message
 # Development targets
 .PHONY: dev
 dev: ## Run in development mode
-	@echo "$(BLUE)🚀 Starting development mode...$(NC)"
-	@echo "$(CYAN)Environment: $(ENVIRONMENT)$(NC)"
-	@echo "$(CYAN)Config: $(CONFIG_FILE)$(NC)"
+	@echo "🚀 Starting development mode..."
+	@echo "Environment: $(ENVIRONMENT)"
+	@echo "Config: $(CONFIG_FILE)"
 	ENVIRONMENT=$(ENVIRONMENT) $(CARGO) run --bin $(BINARY_NAME)
 
 .PHONY: run
 run: ## Run the built binary
-	@echo "$(BLUE)🚀 Running binary...$(NC)"
-	@echo "$(CYAN)Environment: $(ENVIRONMENT)$(NC)"
-	@echo "$(CYAN)Config: $(CONFIG_FILE)$(NC)"
+	@echo "🚀 Running binary..."
+	@echo "Environment: $(ENVIRONMENT)"
+	@echo "Config: $(CONFIG_FILE)"
 	@if [ ! -f "$(TARGET_DIR)/release/$(BINARY_NAME)" ]; then \
-		echo "$(YELLOW)Binary not found. Building first...$(NC)"; \
+		echo "Binary not found. Building first..."; \
 		$(MAKE) build; \
 	fi
 	ENVIRONMENT=$(ENVIRONMENT) ./$(TARGET_DIR)/release/$(BINARY_NAME)
 
 .PHONY: dev-watch
 dev-watch: ## Run with cargo watch for auto-reload
-	@echo "$(BLUE)👀 Starting development mode with auto-reload...$(NC)"
+	@echo "👀 Starting development mode with auto-reload..."
 	@if ! command -v cargo-watch >/dev/null 2>&1; then \
-		echo "$(YELLOW)Installing cargo-watch...$(NC)"; \
+		echo "Installing cargo-watch..."; \
 		cargo install cargo-watch; \
 	fi
 	cargo watch -x "run --bin $(BINARY_NAME)"
 
 .PHONY: check
 check: ## Check code without building
-	@echo "$(BLUE)🔍 Checking code...$(NC)"
+	@echo "🔍 Checking code..."
 	$(CARGO) check --all-features
 
 .PHONY: check-all
 check-all: ## Check code for all targets
-	@echo "$(BLUE)🔍 Checking code for all targets...$(NC)"
+	@echo "🔍 Checking code for all targets..."
 	@for target in $(TARGETS); do \
-		echo "$(CYAN)Checking $$target...$(NC)"; \
+		echo "Checking $$target..."; \
 		$(CARGO) check --target $$target --all-features || exit 1; \
 	done
 
 # Building targets
 .PHONY: build
 build: ## Build release binary
-	@echo "$(BLUE)🔨 Building release binary...$(NC)"
-	@echo "$(CYAN)Version: $(VERSION)$(NC)"
-	@echo "$(CYAN)Commit: $(GIT_COMMIT)$(NC)"
-	@echo "$(CYAN)Branch: $(GIT_BRANCH)$(NC)"
-	@echo "$(CYAN)Build time: $(BUILD_TIME)$(NC)"
+	@echo "🔨 Building release binary..."
+	@echo "Version: $(VERSION)"
+	@echo "Commit: $(GIT_COMMIT)"
+	@echo "Branch: $(GIT_BRANCH)"
+	@echo "Build time: $(BUILD_TIME)"
 	$(CARGO) build $(CARGO_BUILD_FLAGS) $(CARGO_FLAGS)
-	@echo "$(GREEN)✅ Build completed!$(NC)"
-	@echo "$(CYAN)Binary location: $(TARGET_DIR)/release/$(BINARY_NAME)$(NC)"
+	@echo "✅ Build completed!"
+	@echo "Binary location: $(TARGET_DIR)/release/$(BINARY_NAME)"
 	@ls -lh $(TARGET_DIR)/release/$(BINARY_NAME)
 
 .PHONY: build-debug
 build-debug: ## Build debug binary
-	@echo "$(BLUE)🔨 Building debug binary...$(NC)"
+	@echo "🔨 Building debug binary..."
 	$(CARGO) build $(CARGO_FLAGS)
-	@echo "$(GREEN)✅ Debug build completed!$(NC)"
+	@echo "✅ Debug build completed!"
 
 .PHONY: build-all
 build-all: ## Build for all supported targets
-	@echo "$(BLUE)🔨 Building for all targets...$(NC)"
+	@echo "🔨 Building for all targets..."
 	@for target in $(TARGETS); do \
-		echo "$(CYAN)Building for $$target...$(NC)"; \
+		echo "Building for $$target..."; \
 		$(CARGO) build --target $$target $(CARGO_BUILD_FLAGS) $(CARGO_FLAGS) || exit 1; \
 	done
-	@echo "$(GREEN)✅ All targets built successfully!$(NC)"
+	@echo "✅ All targets built successfully!"
 
 .PHONY: clean
 clean: ## Clean build artifacts
-	@echo "$(BLUE)🧹 Cleaning build artifacts...$(NC)"
+	@echo "🧹 Cleaning build artifacts..."
 	$(CARGO) clean
 	@rm -rf $(COVERAGE_DIR)
-	@echo "$(GREEN)✅ Clean completed!$(NC)"
+	@echo "✅ Clean completed!"
 
 .PHONY: clean-all
 clean-all: ## Clean all artifacts including dependencies
-	@echo "$(BLUE)🧹 Cleaning all artifacts...$(NC)"
+	@echo "🧹 Cleaning all artifacts..."
 	$(CARGO) clean
 	@rm -rf $(COVERAGE_DIR)
 	@rm -rf target/
 	@rm -rf Cargo.lock
-	@echo "$(GREEN)✅ Complete clean finished!$(NC)"
+	@echo "✅ Complete clean finished!"
 
 # Testing targets
 .PHONY: test
 test: ## Run all tests
-	@echo "$(BLUE)🧪 Running tests...$(NC)"
+	@echo "🧪 Running tests..."
 	$(CARGO) test $(CARGO_TEST_FLAGS) $(CARGO_FLAGS)
-	@echo "$(GREEN)✅ Tests completed!$(NC)"
+	@echo "✅ Tests completed!"
 
 .PHONY: test-unit
 test-unit: ## Run unit tests only
-	@echo "$(BLUE)🧪 Running unit tests...$(NC)"
+	@echo "🧪 Running unit tests..."
 	$(CARGO) test --lib $(CARGO_FLAGS)
-	@echo "$(GREEN)✅ Unit tests completed!$(NC)"
+	@echo "✅ Unit tests completed!"
 
 .PHONY: test-integration
 test-integration: ## Run integration tests only
-	@echo "$(BLUE)🧪 Running integration tests...$(NC)"
+	@echo "🧪 Running integration tests..."
 	$(CARGO) test --test integration $(CARGO_FLAGS)
-	@echo "$(GREEN)✅ Integration tests completed!$(NC)"
+	@echo "✅ Integration tests completed!"
 
 .PHONY: test-watch
 test-watch: ## Run tests with auto-reload
-	@echo "$(BLUE)👀 Running tests with auto-reload...$(NC)"
+	@echo "👀 Running tests with auto-reload..."
 	@if ! command -v cargo-watch >/dev/null 2>&1; then \
-		echo "$(YELLOW)Installing cargo-watch...$(NC)"; \
+		echo "Installing cargo-watch..."; \
 		cargo install cargo-watch; \
 	fi
 	cargo watch -x "test $(CARGO_TEST_FLAGS)"
 
 .PHONY: test-coverage
 test-coverage: ## Run tests with coverage report
-	@echo "$(BLUE)📊 Running tests with coverage...$(NC)"
+	@echo "📊 Running tests with coverage..."
 	@if ! command -v cargo-tarpaulin >/dev/null 2>&1; then \
-		echo "$(YELLOW)Installing cargo-tarpaulin...$(NC)"; \
+		echo "Installing cargo-tarpaulin..."; \
 		cargo install cargo-tarpaulin; \
 	fi
 	@mkdir -p $(COVERAGE_DIR)
 	cargo tarpaulin --out Html --output-dir $(COVERAGE_DIR)
-	@echo "$(GREEN)✅ Coverage report generated in $(COVERAGE_DIR)/$(NC)"
+	@echo "✅ Coverage report generated in $(COVERAGE_DIR)/"
 
 # Code quality targets
 .PHONY: fmt
 fmt: ## Format code
-	@echo "$(BLUE)🎨 Formatting code...$(NC)"
+	@echo "🎨 Formatting code..."
 	$(CARGO) fmt --all
-	@echo "$(GREEN)✅ Code formatting completed!$(NC)"
+	@echo "✅ Code formatting completed!"
 
 .PHONY: fmt-check
 fmt-check: ## Check code formatting
-	@echo "$(BLUE)🎨 Checking code formatting...$(NC)"
+	@echo "🎨 Checking code formatting..."
 	$(CARGO) fmt $(CARGO_FMT_FLAGS) $(CARGO_FLAGS)
-	@echo "$(GREEN)✅ Code formatting check passed!$(NC)"
+	@echo "✅ Code formatting check passed!"
 
 .PHONY: clippy
 clippy: ## Run clippy linter (strict)
-	@echo "$(BLUE)🔍 Running clippy...$(NC)"
+	@echo "🔍 Running clippy..."
 	$(CARGO) clippy $(CARGO_CLIPPY_FLAGS) $(CARGO_FLAGS)
-	@echo "$(GREEN)✅ Clippy check passed!$(NC)"
+	@echo "✅ Clippy check passed!"
 
 .PHONY: clippy-check
 clippy-check: ## Run clippy linter (warnings only)
-	@echo "$(BLUE)🔍 Running clippy (warnings only)...$(NC)"
+	@echo "🔍 Running clippy (warnings only)..."
 	$(CARGO) clippy --all-targets --all-features
-	@echo "$(GREEN)✅ Clippy check completed!$(NC)"
+	@echo "✅ Clippy check completed!"
 
 .PHONY: actionlint
 actionlint: ## Validate GitHub Actions syntax
-	@echo "$(BLUE)🔍 Validating GitHub Actions syntax...$(NC)"
+	@echo "🔍 Validating GitHub Actions syntax..."
 	@if ! command -v actionlint >/dev/null 2>&1; then \
-		echo "$(YELLOW)Installing actionlint...$(NC)"; \
+		echo "Installing actionlint..."; \
 		if command -v brew >/dev/null 2>&1; then \
 			brew install actionlint; \
 		elif command -v go >/dev/null 2>&1; then \
 			go install github.com/rhysd/actionlint/cmd/actionlint@latest; \
 		else \
-			echo "$(RED)Error: Cannot install actionlint. Please install manually:$(NC)"; \
+			echo "Error: Cannot install actionlint. Please install manually:"; \
 			echo "  - macOS: brew install actionlint"; \
 			echo "  - Linux: go install github.com/rhysd/actionlint/cmd/actionlint@latest"; \
 			exit 1; \
 		fi; \
 	fi
 	actionlint
-	@echo "$(GREEN)✅ GitHub Actions syntax validation passed!$(NC)"
+	@echo "✅ GitHub Actions syntax validation passed!"
 
 .PHONY: audit
 audit: ## Run security audit
-	@echo "$(BLUE)🔒 Running security audit...$(NC)"
+	@echo "🔒 Running security audit..."
 	@if ! command -v cargo-audit >/dev/null 2>&1; then \
-		echo "$(YELLOW)Installing cargo-audit...$(NC)"; \
-		cargo install cargo-audit; \
+		echo "Installing cargo-audit..."; \
+		cargo install cargo-audit --version 0.21.2; \
 	fi
 	cargo audit
-	@echo "$(GREEN)✅ Security audit completed!$(NC)"
+	@echo "✅ Security audit completed!"
 
 .PHONY: outdated
 outdated: ## Check for outdated dependencies
-	@echo "$(BLUE)📦 Checking for outdated dependencies...$(NC)"
+	@echo "📦 Checking for outdated dependencies..."
 	@if ! command -v cargo-outdated >/dev/null 2>&1; then \
-		echo "$(YELLOW)Installing cargo-outdated...$(NC)"; \
+		echo "Installing cargo-outdated..."; \
 		cargo install cargo-outdated; \
 	fi
 	cargo outdated
 
 .PHONY: update
 update: ## Update dependencies
-	@echo "$(BLUE)📦 Updating dependencies...$(NC)"
+	@echo "📦 Updating dependencies..."
 	$(CARGO) update
-	@echo "$(GREEN)✅ Dependencies updated!$(NC)"
+	@echo "✅ Dependencies updated!"
 
 .PHONY: upgrade
 upgrade: ## Upgrade dependencies
-	@echo "$(BLUE)📦 Upgrading dependencies...$(NC)"
+	@echo "📦 Upgrading dependencies..."
 	@if ! command -v cargo-upgrade >/dev/null 2>&1; then \
-		echo "$(YELLOW)Installing cargo-upgrade...$(NC)"; \
+		echo "Installing cargo-upgrade..."; \
 		cargo install cargo-upgrade; \
 	fi
 	cargo upgrade
-	@echo "$(GREEN)✅ Dependencies upgraded!$(NC)"
+	@echo "✅ Dependencies upgraded!"
 
 # Docker targets
 .PHONY: docker-build
 docker-build: ## Build Docker image
-	@echo "$(BLUE)🐳 Building Docker image...$(NC)"
-	@echo "$(CYAN)Image: $(DOCKER_IMAGE):$(DOCKER_TAG)$(NC)"
+	@echo "🐳 Building Docker image..."
+	@echo "Image: $(DOCKER_IMAGE):$(DOCKER_TAG)"
 	$(DOCKER) build -f $(DOCKER_DIR)/Dockerfile -t $(DOCKER_IMAGE):$(DOCKER_TAG) .
-	@echo "$(GREEN)✅ Docker image built!$(NC)"
+	@echo "✅ Docker image built!"
 
 .PHONY: docker-build-multi
 docker-build-multi: ## Build multi-platform Docker image
-	@echo "$(BLUE)🐳 Building multi-platform Docker image...$(NC)"
+	@echo "🐳 Building multi-platform Docker image..."
 	$(DOCKER) buildx build --platform linux/amd64,linux/arm64 \
 		-f $(DOCKER_DIR)/Dockerfile \
 		-t $(DOCKER_IMAGE):$(DOCKER_TAG) \
 		--push .
-	@echo "$(GREEN)✅ Multi-platform Docker image built and pushed!$(NC)"
+	@echo "✅ Multi-platform Docker image built and pushed!"
 
 .PHONY: docker-run
 docker-run: ## Run Docker container
-	@echo "$(BLUE)🐳 Running Docker container...$(NC)"
+	@echo "🐳 Running Docker container..."
 	$(DOCKER) run --rm -it \
 		--name $(PROJECT_NAME)-dev \
 		-v $(PWD)/config:/app/config \
@@ -301,179 +291,223 @@ docker-run: ## Run Docker container
 
 .PHONY: docker-stop
 docker-stop: ## Stop Docker container
-	@echo "$(BLUE)🐳 Stopping Docker container...$(NC)"
+	@echo "🐳 Stopping Docker container..."
 	$(DOCKER) stop $(PROJECT_NAME)-dev 2>/dev/null || true
-	@echo "$(GREEN)✅ Docker container stopped!$(NC)"
+	@echo "✅ Docker container stopped!"
 
 .PHONY: docker-clean
 docker-clean: ## Clean Docker images
-	@echo "$(BLUE)🐳 Cleaning Docker images...$(NC)"
+	@echo "🐳 Cleaning Docker images..."
 	$(DOCKER) rmi $(DOCKER_IMAGE):$(DOCKER_TAG) 2>/dev/null || true
-	@echo "$(GREEN)✅ Docker images cleaned!$(NC)"
+	@echo "✅ Docker images cleaned!"
 
 # Docker Compose targets
 .PHONY: up
 up: ## Start services with docker-compose
-	@echo "$(BLUE)🚀 Starting services...$(NC)"
+	@echo "🚀 Starting services..."
 	$(DOCKER_COMPOSE) -f $(DOCKER_DIR)/docker-compose.yml up -d
-	@echo "$(GREEN)✅ Services started!$(NC)"
+	@echo "✅ Services started!"
 
 .PHONY: down
 down: ## Stop services with docker-compose
-	@echo "$(BLUE)🛑 Stopping services...$(NC)"
+	@echo "🛑 Stopping services..."
 	$(DOCKER_COMPOSE) -f $(DOCKER_DIR)/docker-compose.yml down
-	@echo "$(GREEN)✅ Services stopped!$(NC)"
+	@echo "✅ Services stopped!"
+
+# Production targets
+.PHONY: production-up
+production-up: ## Start production services
+	@echo "🚀 Starting production services..."
+	@echo "Environment: production"
+	$(DOCKER_COMPOSE) -f $(DOCKER_DIR)/docker-compose.production.yml up -d
+	@echo "✅ Production services started!"
+	@echo "Access monitoring:"
+	@echo "  - Grafana: http://localhost:3000 (admin/admin)"
+	@echo "  - Prometheus: http://localhost:9090"
+	@echo "  - AlertManager: http://localhost:9093"
+
+.PHONY: production-down
+production-down: ## Stop production services
+	@echo "🛑 Stopping production services..."
+	$(DOCKER_COMPOSE) -f $(DOCKER_DIR)/docker-compose.production.yml down
+	@echo "✅ Production services stopped!"
+
+.PHONY: production-logs
+production-logs: ## View production logs
+	@echo "📋 Production logs..."
+	$(DOCKER_COMPOSE) -f $(DOCKER_DIR)/docker-compose.production.yml logs -f
+
+.PHONY: production-status
+production-status: ## Check production service status
+	@echo "📊 Production service status..."
+	$(DOCKER_COMPOSE) -f $(DOCKER_DIR)/docker-compose.production.yml ps
+
+.PHONY: deploy-production
+deploy-production: ## Deploy to production using GitHub Actions
+	@echo "🚀 Deploying to production..."
+	@echo "This will trigger the GitHub Actions deployment workflow"
+	@echo "Make sure you have:"
+	@echo "  1. The Graph API key configured"
+	@echo "  2. Production Redis instance ready"
+	@echo "  3. GitHub repository secrets configured"
+	@echo ""
+	@echo "To deploy:"
+	@echo "  1. Go to Actions → Deploy to Production"
+	@echo "  2. Click 'Run workflow'"
+	@echo "  3. Select environment: production"
+	@echo "  4. Enter version tag"
+	@echo "  5. Click 'Run workflow'"
 
 .PHONY: logs
 logs: ## View service logs
-	@echo "$(BLUE)📋 Viewing service logs...$(NC)"
+	@echo "📋 Viewing service logs..."
 	$(DOCKER_COMPOSE) -f $(DOCKER_DIR)/docker-compose.yml logs -f
 
 .PHONY: restart
 restart: ## Restart services
-	@echo "$(BLUE)🔄 Restarting services...$(NC)"
+	@echo "🔄 Restarting services..."
 	$(DOCKER_COMPOSE) -f $(DOCKER_DIR)/docker-compose.yml restart
-	@echo "$(GREEN)✅ Services restarted!$(NC)"
+	@echo "✅ Services restarted!"
 
 # Utility targets
 .PHONY: install-tools
 install-tools: ## Install development tools
-	@echo "$(BLUE)🛠️ Installing development tools...$(NC)"
+	@echo "🛠️ Installing development tools..."
 	$(RUSTUP) component add rustfmt clippy
-	cargo install cargo-watch cargo-tarpaulin cargo-audit cargo-outdated cargo-upgrade
-	@echo "$(GREEN)✅ Development tools installed!$(NC)"
+	cargo install cargo-watch cargo-tarpaulin cargo-audit --version 0.18 cargo-outdated cargo-upgrade
+	@echo "✅ Development tools installed!"
 
 .PHONY: check-tools
 check-tools: ## Check if required tools are installed
-	@echo "$(BLUE)🔍 Checking required tools...$(NC)"
-	@command -v $(CARGO) >/dev/null 2>&1 || { echo "$(RED)❌ Cargo not found$(NC)"; exit 1; }
-	@command -v $(RUSTC) >/dev/null 2>&1 || { echo "$(RED)❌ Rustc not found$(NC)"; exit 1; }
-	@command -v $(DOCKER) >/dev/null 2>&1 || { echo "$(RED)❌ Docker not found$(NC)"; exit 1; }
-	@echo "$(GREEN)✅ All required tools are available!$(NC)"
+	@echo "🔍 Checking required tools..."
+	@command -v $(CARGO) >/dev/null 2>&1 || { echo "❌ Cargo not found"; exit 1; }
+	@command -v $(RUSTC) >/dev/null 2>&1 || { echo "❌ Rustc not found"; exit 1; }
+	@command -v $(DOCKER) >/dev/null 2>&1 || { echo "❌ Docker not found"; exit 1; }
+	@echo "✅ All required tools are available!"
 
 .PHONY: version
 version: ## Show version information
-	@echo "$(CYAN)Project: $(PROJECT_NAME)$(NC)"
-	@echo "$(CYAN)Version: $(VERSION)$(NC)"
-	@echo "$(CYAN)Git Commit: $(GIT_COMMIT)$(NC)"
-	@echo "$(CYAN)Git Branch: $(GIT_BRANCH)$(NC)"
-	@echo "$(CYAN)Build Time: $(BUILD_TIME)$(NC)"
-	@echo "$(CYAN)Rust Version: $(shell $(RUSTC) --version)$(NC)"
-	@echo "$(CYAN)Cargo Version: $(shell $(CARGO) --version)$(NC)"
+	@echo "Project: $(PROJECT_NAME)"
+	@echo "Version: $(VERSION)"
+	@echo "Git Commit: $(GIT_COMMIT)"
+	@echo "Git Branch: $(GIT_BRANCH)"
+	@echo "Build Time: $(BUILD_TIME)"
+	@echo "Rust Version: $(shell $(RUSTC) --version)"
+	@echo "Cargo Version: $(shell $(CARGO) --version)"
 
 .PHONY: size
 size: ## Show binary size information
-	@echo "$(BLUE)📏 Binary size information...$(NC)"
+	@echo "📏 Binary size information..."
 	@if [ -f "$(TARGET_DIR)/release/$(BINARY_NAME)" ]; then \
-		echo "$(CYAN)Release binary:$(NC)"; \
+		echo "Release binary:"; \
 		ls -lh "$(TARGET_DIR)/release/$(BINARY_NAME)"; \
 		echo ""; \
-		echo "$(CYAN)Debug binary:$(NC)"; \
+		echo "Debug binary:"; \
 		ls -lh "$(TARGET_DIR)/debug/$(BINARY_NAME)" 2>/dev/null || echo "Debug binary not found"; \
 	else \
-		echo "$(YELLOW)No release binary found. Run 'make build' first.$(NC)"; \
+		echo "No release binary found. Run 'make build' first."; \
 	fi
 
 .PHONY: config
 config: ## Show current configuration
-	@echo "$(BLUE)⚙️ Current configuration...$(NC)"
-	@echo "$(CYAN)Environment: $(ENV)$(NC)"
-	@echo "$(CYAN)Config file: $(CONFIG_FILE)$(NC)"
+	@echo "⚙️ Current configuration..."
+	@echo "Environment: $(ENV)"
+	@echo "Config file: $(CONFIG_FILE)"
 	@if [ -f "$(CONFIG_FILE)" ]; then \
-		echo "$(GREEN)✅ Config file exists$(NC)"; \
-		echo "$(CYAN)Config contents:$(NC)"; \
+		echo "✅ Config file exists"; \
+		echo "Config contents:"; \
 		cat "$(CONFIG_FILE)"; \
 	else \
-		echo "$(YELLOW)⚠️ Config file not found$(NC)"; \
-		echo "$(CYAN)Available configs:$(NC)"; \
+		echo "⚠️ Config file not found"; \
+		echo "Available configs:"; \
 		ls -la "$(CONFIG_DIR)/"*.toml 2>/dev/null || echo "No config files found"; \
 	fi
 
 # Quality assurance targets
 .PHONY: qa
 qa: ## Run all quality checks
-	@echo "$(BLUE)🔍 Running quality assurance checks...$(NC)"
+	@echo "🔍 Running quality assurance checks..."
 	@$(MAKE) fmt-check
 	@$(MAKE) clippy-check
 	@$(MAKE) actionlint
 	@$(MAKE) test
 	@$(MAKE) audit
-	@echo "$(GREEN)✅ All quality checks passed!$(NC)"
+	@echo "✅ All quality checks passed!"
 
 .PHONY: pre-commit
 pre-commit: ## Run pre-commit checks
-	@echo "$(BLUE)🔍 Running pre-commit checks...$(NC)"
+	@echo "🔍 Running pre-commit checks..."
 	@$(MAKE) fmt-check
 	@$(MAKE) clippy
 	@$(MAKE) actionlint
 	@$(MAKE) test
-	@echo "$(GREEN)✅ Pre-commit checks passed!$(NC)"
+	@echo "✅ Pre-commit checks passed!"
 
 .PHONY: ci
 ci: ## Run CI pipeline locally
-	@echo "$(BLUE)🚀 Running CI pipeline locally...$(NC)"
+	@echo "🚀 Running CI pipeline locally..."
 	@$(MAKE) clean
 	@$(MAKE) check-all
 	@$(MAKE) build-all
 	@$(MAKE) test
 	@$(MAKE) audit
 	@$(MAKE) docker-build
-	@echo "$(GREEN)✅ CI pipeline completed successfully!$(NC)"
+	@echo "✅ CI pipeline completed successfully!"
 
 # Release targets
 .PHONY: release
 release: ## Prepare release
-	@echo "$(BLUE)🚀 Preparing release...$(NC)"
-	@echo "$(CYAN)Version: $(VERSION)$(NC)"
+	@echo "🚀 Preparing release..."
+	@echo "Version: $(VERSION)"
 	@$(MAKE) clean
 	@$(MAKE) qa
 	@$(MAKE) build
 	@$(MAKE) docker-build
-	@echo "$(GREEN)✅ Release prepared!$(NC)"
-	@echo "$(YELLOW)Next steps:$(NC)"
+	@echo "✅ Release prepared!"
+	@echo "Next steps:"
 	@echo "  1. git tag $(VERSION)"
 	@echo "  2. git push origin $(VERSION)"
 	@echo "  3. Create GitHub release"
 
 .PHONY: release-all
 release-all: ## Prepare release for all platforms
-	@echo "$(BLUE)🚀 Preparing release for all platforms...$(NC)"
+	@echo "🚀 Preparing release for all platforms..."
 	@$(MAKE) clean
 	@$(MAKE) qa
 	@$(MAKE) build-all
 	@$(MAKE) docker-build-multi
-	@echo "$(GREEN)✅ Multi-platform release prepared!$(NC)"
+	@echo "✅ Multi-platform release prepared!"
 
 # Documentation targets
 .PHONY: docs
 docs: ## Generate documentation
-	@echo "$(BLUE)📚 Generating documentation...$(NC)"
+	@echo "📚 Generating documentation..."
 	$(CARGO) doc --no-deps --open
-	@echo "$(GREEN)✅ Documentation generated!$(NC)"
+	@echo "✅ Documentation generated!"
 
 .PHONY: docs-check
 docs-check: ## Check documentation
-	@echo "$(BLUE)📚 Checking documentation...$(NC)"
+	@echo "📚 Checking documentation..."
 	$(CARGO) doc --no-deps
-	@echo "$(GREEN)✅ Documentation check completed!$(NC)"
+	@echo "✅ Documentation check completed!"
 
 # Benchmark targets
 .PHONY: bench
 bench: ## Run benchmarks
-	@echo "$(BLUE)⚡ Running benchmarks...$(NC)"
+	@echo "⚡ Running benchmarks..."
 	$(CARGO) bench
-	@echo "$(GREEN)✅ Benchmarks completed!$(NC)"
+	@echo "✅ Benchmarks completed!"
 
 # Profiling targets
 .PHONY: profile
 profile: ## Profile the application
-	@echo "$(BLUE)📊 Profiling application...$(NC)"
+	@echo "📊 Profiling application..."
 	@if ! command -v cargo-flamegraph >/dev/null 2>&1; then \
-		echo "$(YELLOW)Installing cargo-flamegraph...$(NC)"; \
+		echo "Installing cargo-flamegraph..."; \
 		cargo install flamegraph; \
 	fi
 	cargo flamegraph --bin $(BINARY_NAME)
-	@echo "$(GREEN)✅ Profiling completed!$(NC)"
+	@echo "✅ Profiling completed!"
 
 # Default target
 .DEFAULT_GOAL := help
@@ -481,14 +515,14 @@ profile: ## Profile the application
 # Print target info
 .PHONY: info
 info: ## Show build information
-	@echo "$(CYAN)Build Information$(NC)"
-	@echo "$(CYAN)================$(NC)"
-	@echo "$(WHITE)Project:$(NC) $(PROJECT_NAME)"
-	@echo "$(WHITE)Version:$(NC) $(VERSION)"
-	@echo "$(WHITE)Environment:$(NC) $(ENV)"
-	@echo "$(WHITE)Config:$(NC) $(CONFIG_FILE)"
-	@echo "$(WHITE)Git:$(NC) $(GIT_COMMIT) on $(GIT_BRANCH)"
-	@echo "$(WHITE)Build Time:$(NC) $(BUILD_TIME)"
-	@echo "$(WHITE)Targets:$(NC) $(TARGETS)"
-	@echo "$(WHITE)Rust:$(NC) $(shell $(RUSTC) --version)"
-	@echo "$(WHITE)Cargo:$(NC) $(shell $(CARGO) --version)" 
+	@echo "Build Information"
+	@echo "================"
+	@echo "Project: $(PROJECT_NAME)"
+	@echo "Version: $(VERSION)"
+	@echo "Environment: $(ENV)"
+	@echo "Config: $(CONFIG_FILE)"
+	@echo "Git: $(GIT_COMMIT) on $(GIT_BRANCH)"
+	@echo "Build Time: $(BUILD_TIME)"
+	@echo "Targets: $(TARGETS)"
+	@echo "Rust: $(shell $(RUSTC) --version)"
+	@echo "Cargo: $(shell $(CARGO) --version)" 

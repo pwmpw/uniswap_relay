@@ -1,0 +1,60 @@
+[monitoring]
+# Enable monitoring features
+enable_metrics = true
+enable_health_checks = true
+enable_structured_logging = true
+log_format = "json"
+metrics_interval_seconds = 10
+
+# Health check configuration
+health_check_port = 8080
+health_check_path = "/health"
+health_check_timeout_seconds = 5
+
+# Metrics configuration
+metrics_port = 9090
+metrics_path = "/metrics"
+metrics_timeout_seconds = 5
+
+# Logging configuration
+log_level = "info"
+log_file_path = "/var/log/uniswap_relay_dapp"
+log_max_size_mb = 100
+log_max_files = 5
+
+# Alerting thresholds
+alerts = [
+  { name = "high_error_rate", threshold = 0.1, window_seconds = 300 },
+  { name = "low_event_volume", threshold = 10, window_seconds = 600 },
+  { name = "high_latency", threshold = 5000, window_seconds = 300 }
+]
+
+# External monitoring services
+[monitoring.external]
+# Prometheus endpoint
+prometheus_enabled = true
+prometheus_port = 9090
+
+# Grafana integration
+grafana_enabled = false
+grafana_url = "http://localhost:3000"
+
+# AlertManager integration
+alertmanager_enabled = false
+alertmanager_url = "http://localhost:9093"
+
+# Slack notifications
+slack_enabled = false
+slack_webhook_url = "your_slack_webhook_url"
+
+# Email notifications
+email_enabled = false
+smtp_server = "smtp.gmail.com"
+smtp_port = 587
+smtp_username = "your_email@gmail.com"
+smtp_password = "your_app_password"
+
+# PagerDuty integration
+pagerduty_enabled = false
+pagerduty_api_key = "your_pagerduty_api_key"
+pagerduty_service_id = "your_service_id" 

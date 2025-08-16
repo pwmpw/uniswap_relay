@@ -1,11 +1,8 @@
 # Uniswap Relay DApp
 
 [![CI](https://github.com/pwmpw/uniswap_relay_dapp/workflows/CI/badge.svg)](https://github.com/pwmpw/uniswap_relay_dapp/actions?query=workflow%3ACI)
-[![Lint](https://github.com/pwmpw/uniswap_relay_dapp/workflows/Lint/badge.svg)](https://github.com/pwmpw/uniswap_relay_dapp/actions?query=workflow%3ALint)
-[![Release](https://github.com/pwmpw/uniswap_relay_dapp/workflows/Release/badge.svg)](https://github.com/pwmpw/uniswap_relay_dapp/actions?query=workflow%3ARelease)
-[![Security](https://github.com/pwmpw/uniswap_relay_dapp/workflows/Security/badge.svg)](https://github.com/pwmpw/uniswap_relay_dapp/actions?query=workflow%3ASecurity)
-[![Dependencies](https://github.com/pwmpw/uniswap_relay_dapp/workflows/Dependencies/badge.svg)](https://github.com/pwmpw/uniswap_relay_dapp/actions?query=workflow%3ADependencies)
-[![Deploy](https://github.com/pwmpw/uniswap_relay_dapp/workflows/Deploy/badge.svg)](https://github.com/pwmpw/uniswap_relay_dapp/actions?query=workflow%3ADeploy)
+[![Security Scan](https://github.com/pwmpw/uniswap_relay_dapp/actions/workflows/security.yml/badge.svg?branch=main)](https://github.com/pwmpw/uniswap_relay_dapp/actions/workflows/security.yml)
+[![Dependencies](https://github.com/pwmpw/uniswap_relay_dapp/actions/workflows/dependencies.yml/badge.svg)](https://github.com/pwmpw/uniswap_relay_dapp/actions/workflows/dependencies.yml)
 
 High-performance, production-ready DApp for monitoring Uniswap V2 and V3 swap events via The Graph subgraphs, with data enrichment and Redis pub/sub publishing.
 
@@ -57,8 +54,8 @@ Edit `config/config.toml` with your endpoints:
 
 ```toml
 [subgraph]
-uniswap_v2_url = "https://api.thegraph.com/subgraphs/name/uniswap/uniswap-v2"
-uniswap_v3_url = "https://api.thegraph.com/subgraphs/name/uniswap/uniswap-v3"
+uniswap_v2_url = "https://gateway.thegraph.com/api/16ea198ba16011bac11cec9728b10908/subgraphs/name/uniswap/uniswap-v2"
+uniswap_v3_url = "https://gateway.thegraph.com/api/16ea198ba16011bac11cec9728b10908/subgraphs/name/uniswap/uniswap-v3"
 polling_interval_seconds = 15
 
 [redis]
@@ -75,6 +72,41 @@ make dev
 # Production
 make build
 make run
+```
+
+## 🚀 Production Deployment
+
+### 1. Get The Graph API Key
+
+1. Visit [The Graph Studio](https://thegraph.com/studio/apikeys/)
+2. Create a new API key
+3. Replace `[api-key]` in your configuration files
+
+### 2. Configure Production Environment
+
+```bash
+# Copy production template
+cp config/env.template .env
+
+# Edit with your production values
+nano .env
+```
+
+### 3. Deploy Using GitHub Actions
+
+1. **Manual Deployment**: Go to Actions → Deploy to Production → Run workflow
+2. **Automatic Deployment**: Push a tag (e.g., `git tag v1.0.0 && git push origin v1.0.0`)
+
+### 4. Production Monitoring
+
+```bash
+# Start production stack
+docker-compose -f docker/docker-compose.production.yml up -d
+
+# Access monitoring:
+# - Grafana: http://localhost:3000 (admin/admin)
+# - Prometheus: http://localhost:9090
+# - AlertManager: http://localhost:9093
 ```
 
 ### 5. Monitor Events

@@ -1,0 +1,43 @@
+[subgraph]
+# Production Uniswap V2 subgraph endpoint (Ethereum mainnet)
+uniswap_v2_url = "https://gateway.thegraph.com/api/16ea198ba16011bac11cec9728b10908/subgraphs/name/uniswap/uniswap-v2"
+# Production Uniswap V3 subgraph endpoint (Ethereum mainnet)
+uniswap_v3_url = "https://gateway.thegraph.com/api/16ea198ba16011bac11cec9728b10908/subgraphs/name/uniswap/uniswap-v3"
+timeout_seconds = 60
+max_retries = 5
+polling_interval_seconds = 10
+
+[redis]
+# Production Redis instance - replace with your actual Redis URL
+url = "redis://[username]:[password]@[host]:[port]"
+channel = "swap_events"
+connection_pool_size = 20
+timeout_ms = 10000
+retry_attempts = 5
+retry_delay_ms = 2000
+
+[application]
+log_level = "info"
+environment = "production"
+health_check_port = 8080
+metrics_port = 9090
+worker_threads = 8
+max_concurrent_tasks = 200
+
+[monitoring]
+enable_metrics = true
+enable_health_checks = true
+enable_structured_logging = true
+log_format = "json"
+metrics_interval_seconds = 10
+
+[rate_limiting]
+max_subgraph_requests_per_second = 100
+burst_size = 200
+window_size_seconds = 60
+
+[retry]
+max_attempts = 5
+initial_delay_ms = 2000
+max_delay_ms = 30000
+backoff_multiplier = 2.0 

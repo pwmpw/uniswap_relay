@@ -72,9 +72,33 @@ impl AppConfig {
 
         info!("Loading configuration for environment: {}", environment);
 
-        // For now, just use defaults to get the application running
-        info!("Using default configuration");
-        Ok(Self::default())
+        let mut config = Config::builder();
+
+        // Load base configuration
+        config = config.add_source(File::with_name("config/config").required(true));
+
+        // Load environment-specific configuration
+        let env_config_path = format!("config/{}", environment);
+        if std::path::Path::new(&format!("{}.toml", env_config_path)).exists() {
+            config = config.add_source(File::with_name(&env_config_path).required(false));
+        }
+
+        // Override with environment variables
+        config = config.add_source(
+            Environment::default()
+                .prefix("APP")
+                .separator("_")
+                .ignore_empty(true),
+        );
+
+        // Build and deserialize configuration
+        let app_config: AppConfig = config.build()?.try_deserialize()?;
+
+        info!(
+            "Configuration loaded successfully for environment: {}",
+            environment
+        );
+        Ok(app_config)
     }
 
     pub fn validate(&self) -> Result<(), String> {

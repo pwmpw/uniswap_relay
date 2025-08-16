@@ -1,4 +1,4 @@
-name: Update Dependencies
+name: Dependencies
 
 on:
   schedule:
@@ -31,10 +31,9 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Install Rust toolchain
-        uses: actions-rs/toolchain@v1
+        uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: stable
-          override: true
 
       - name: Install cargo-edit
         run: |
@@ -44,10 +43,10 @@ jobs:
         run: |
           cargo install cargo-update --version 0.8.0
 
-      - name: Check current dependency status
-        run: |
-          echo "Current dependency status:"
-          cargo outdated
+#      - name: Check current dependency status
+#        run: |
+#          echo "Current dependency status:"
+#          cargo outdated
 
       - name: Update Cargo.lock
         run: cargo update
@@ -77,16 +76,16 @@ jobs:
         id: check-updates
         run: |
           if git diff --quiet Cargo.lock; then
-            echo "no_updates=true" >> $GITHUB_OUTPUT
+            echo "no_updates=true" >> "$GITHUB_OUTPUT"
             echo "No dependency updates found"
           else
-            echo "no_updates=false" >> $GITHUB_OUTPUT
+            echo "no_updates=false" >> "$GITHUB_OUTPUT"
             echo "Dependency updates found"
           fi
 
       - name: Create pull request
         if: steps.check-updates.outputs.no_updates == 'false'
-        uses: peter-evans/create-pull-request@v5
+        uses: peter-evans/create-pull-request@v6
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           commit-message: "chore: update dependencies"

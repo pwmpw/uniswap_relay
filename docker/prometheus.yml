@@ -1,0 +1,32 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+rule_files:
+  # - "first_rules.yml"
+  # - "second_rules.yml"
+
+scrape_configs:
+  # Prometheus itself
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # Uniswap Relay DApp metrics
+  - job_name: 'uniswap-relay-dapp'
+    static_configs:
+      - targets: ['uniswap-relay-dapp:9090']
+    scrape_interval: 10s
+    metrics_path: '/metrics'
+
+  # Redis metrics (if using redis_exporter)
+  - job_name: 'redis'
+    static_configs:
+      - targets: ['uniswap-redis:6379']
+    scrape_interval: 30s
+
+  # Node exporter (if needed)
+  - job_name: 'node'
+    static_configs:
+      - targets: ['localhost:9100']
+    scrape_interval: 30s 
