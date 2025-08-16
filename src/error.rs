@@ -192,4 +192,4 @@ impl From<redis::RedisError> for DAppError {
     fn from(err: redis::RedisError) -> Self {
         DAppError::Redis(RedisError::Connection(err.to_string()))
     }
-} 
+}

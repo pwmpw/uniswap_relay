@@ -1,3 +1,3 @@
 pub mod publisher;
 
-pub use publisher::RedisPublisher; 
+pub use publisher::RedisPublisher;

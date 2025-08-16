@@ -35,10 +35,10 @@ impl ExponentialBackoff {
         let delay = if self.current_attempt == 0 {
             self.initial_delay
         } else {
-            let calculated_delay = self.initial_delay.mul_f64(
-                self.multiplier.powi(self.current_attempt as i32)
-            );
-            
+            let calculated_delay = self
+                .initial_delay
+                .mul_f64(self.multiplier.powi(self.current_attempt as i32));
+
             if calculated_delay > self.max_delay {
                 self.max_delay
             } else {
@@ -69,10 +69,10 @@ impl ExponentialBackoff {
 impl Default for ExponentialBackoff {
     fn default() -> Self {
         Self::new(
-            Duration::from_millis(1000),  // 1 second initial delay
-            Duration::from_secs(30),       // 30 seconds max delay
-            2.0,                           // Double the delay each time
-            5,                             // Max 5 attempts
+            Duration::from_millis(1000), // 1 second initial delay
+            Duration::from_secs(30),     // 30 seconds max delay
+            2.0,                         // Double the delay each time
+            5,                           // Max 5 attempts
         )
     }
 }
@@ -110,16 +110,16 @@ mod tests {
     #[test]
     fn test_backoff_reset() {
         let mut backoff = ExponentialBackoff::default();
-        
+
         // Use it once
         backoff.next_delay();
         assert_eq!(backoff.current_attempt(), 1);
-        
+
         // Reset it
         backoff.reset();
         assert_eq!(backoff.current_attempt(), 0);
         assert!(!backoff.exhausted());
-        
+
         // Use it again
         backoff.next_delay();
         assert_eq!(backoff.current_attempt(), 1);
@@ -129,18 +129,18 @@ mod tests {
     fn test_max_delay_cap() {
         let mut backoff = ExponentialBackoff::new(
             Duration::from_millis(1000),
-            Duration::from_millis(2000),  // Max 2 seconds
-            3.0,                          // Triple each time
+            Duration::from_millis(2000), // Max 2 seconds
+            3.0,                         // Triple each time
             5,
         );
 
         // First: 1000ms
         assert_eq!(backoff.next_delay(), Some(Duration::from_millis(1000)));
-        
+
         // Second: 3000ms, but capped at 2000ms
         assert_eq!(backoff.next_delay(), Some(Duration::from_millis(2000)));
-        
+
         // Third: 9000ms, but capped at 2000ms
         assert_eq!(backoff.next_delay(), Some(Duration::from_millis(2000)));
     }
-} 
+}

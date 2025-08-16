@@ -209,10 +209,35 @@ fmt-check: ## Check code formatting
 	@echo "$(GREEN)✅ Code formatting check passed!$(NC)"
 
 .PHONY: clippy
-clippy: ## Run clippy linter
+clippy: ## Run clippy linter (strict)
 	@echo "$(BLUE)🔍 Running clippy...$(NC)"
 	$(CARGO) clippy $(CARGO_CLIPPY_FLAGS) $(CARGO_FLAGS)
 	@echo "$(GREEN)✅ Clippy check passed!$(NC)"
+
+.PHONY: clippy-check
+clippy-check: ## Run clippy linter (warnings only)
+	@echo "$(BLUE)🔍 Running clippy (warnings only)...$(NC)"
+	$(CARGO) clippy --all-targets --all-features
+	@echo "$(GREEN)✅ Clippy check completed!$(NC)"
+
+.PHONY: actionlint
+actionlint: ## Validate GitHub Actions syntax
+	@echo "$(BLUE)🔍 Validating GitHub Actions syntax...$(NC)"
+	@if ! command -v actionlint >/dev/null 2>&1; then \
+		echo "$(YELLOW)Installing actionlint...$(NC)"; \
+		if command -v brew >/dev/null 2>&1; then \
+			brew install actionlint; \
+		elif command -v go >/dev/null 2>&1; then \
+			go install github.com/rhysd/actionlint/cmd/actionlint@latest; \
+		else \
+			echo "$(RED)Error: Cannot install actionlint. Please install manually:$(NC)"; \
+			echo "  - macOS: brew install actionlint"; \
+			echo "  - Linux: go install github.com/rhysd/actionlint/cmd/actionlint@latest"; \
+			exit 1; \
+		fi; \
+	fi
+	actionlint
+	@echo "$(GREEN)✅ GitHub Actions syntax validation passed!$(NC)"
 
 .PHONY: audit
 audit: ## Run security audit
@@ -369,7 +394,8 @@ config: ## Show current configuration
 qa: ## Run all quality checks
 	@echo "$(BLUE)🔍 Running quality assurance checks...$(NC)"
 	@$(MAKE) fmt-check
-	@$(MAKE) clippy
+	@$(MAKE) clippy-check
+	@$(MAKE) actionlint
 	@$(MAKE) test
 	@$(MAKE) audit
 	@echo "$(GREEN)✅ All quality checks passed!$(NC)"
@@ -379,6 +405,7 @@ pre-commit: ## Run pre-commit checks
 	@echo "$(BLUE)🔍 Running pre-commit checks...$(NC)"
 	@$(MAKE) fmt-check
 	@$(MAKE) clippy
+	@$(MAKE) actionlint
 	@$(MAKE) test
 	@echo "$(GREEN)✅ Pre-commit checks passed!$(NC)"
 

@@ -81,13 +81,13 @@ impl MetricsCollector {
 
         tokio::spawn(async move {
             let mut interval_timer = tokio::time::interval(interval);
-            
+
             loop {
                 interval_timer.tick().await;
-                
+
                 let metrics = metrics_collector.get_metrics();
                 info!("Metrics: {:?}", metrics);
-                
+
                 // Here you would typically send metrics to a monitoring system
                 // like Prometheus, InfluxDB, or CloudWatch
             }
@@ -120,4 +120,4 @@ pub struct Metrics {
     pub memory_usage_mb: f64,
     pub cpu_usage_percent: f64,
     pub timestamp: chrono::DateTime<chrono::Utc>,
-} 
+}

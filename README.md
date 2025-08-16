@@ -1,5 +1,12 @@
 # Uniswap Relay DApp
 
+[![CI](https://github.com/pwmpw/uniswap_relay_dapp/workflows/CI/badge.svg)](https://github.com/pwmpw/uniswap_relay_dapp/actions?query=workflow%3ACI)
+[![Lint](https://github.com/pwmpw/uniswap_relay_dapp/workflows/Lint/badge.svg)](https://github.com/pwmpw/uniswap_relay_dapp/actions?query=workflow%3ALint)
+[![Release](https://github.com/pwmpw/uniswap_relay_dapp/workflows/Release/badge.svg)](https://github.com/pwmpw/uniswap_relay_dapp/actions?query=workflow%3ARelease)
+[![Security](https://github.com/pwmpw/uniswap_relay_dapp/workflows/Security/badge.svg)](https://github.com/pwmpw/uniswap_relay_dapp/actions?query=workflow%3ASecurity)
+[![Dependencies](https://github.com/pwmpw/uniswap_relay_dapp/workflows/Dependencies/badge.svg)](https://github.com/pwmpw/uniswap_relay_dapp/actions?query=workflow%3ADependencies)
+[![Deploy](https://github.com/pwmpw/uniswap_relay_dapp/workflows/Deploy/badge.svg)](https://github.com/pwmpw/uniswap_relay_dapp/actions?query=workflow%3ADeploy)
+
 High-performance, production-ready DApp for monitoring Uniswap V2 and V3 swap events via The Graph subgraphs, with data enrichment and Redis pub/sub publishing.
 
 ## 🚀 Features

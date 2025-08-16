@@ -69,9 +69,9 @@ pub struct RetryConfig {
 impl AppConfig {
     pub fn load() -> Result<Self, ConfigError> {
         let environment = env::var("ENVIRONMENT").unwrap_or_else(|_| "development".to_string());
-        
+
         info!("Loading configuration for environment: {}", environment);
-        
+
         // For now, just use defaults to get the application running
         info!("Using default configuration");
         Ok(Self::default())
@@ -110,8 +110,10 @@ impl Default for AppConfig {
     fn default() -> Self {
         Self {
             subgraph: SubgraphConfig {
-                uniswap_v2_url: "https://api.thegraph.com/subgraphs/name/uniswap/uniswap-v2".to_string(),
-                uniswap_v3_url: "https://api.thegraph.com/subgraphs/name/uniswap/uniswap-v3".to_string(),
+                uniswap_v2_url: "https://api.thegraph.com/subgraphs/name/uniswap/uniswap-v2"
+                    .to_string(),
+                uniswap_v3_url: "https://api.thegraph.com/subgraphs/name/uniswap/uniswap-v3"
+                    .to_string(),
                 timeout_seconds: 30,
                 max_retries: 3,
                 polling_interval_seconds: 15,
@@ -152,4 +154,4 @@ impl Default for AppConfig {
             },
         }
     }
-} 
+}

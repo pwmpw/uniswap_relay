@@ -1,10 +1,10 @@
-use crate::error::{Result, DAppError, SubgraphError};
 use crate::config::AppConfig;
+use crate::error::{DAppError, Result, SubgraphError};
 use crate::model::PoolQueryResult;
 use reqwest::Client;
 use serde_json::{json, Value};
 use std::time::Duration;
-use tracing::{info, warn, debug};
+use tracing::{debug, info, warn};
 
 /// GraphQL client for Uniswap subgraphs
 pub struct SubgraphClient {
@@ -24,13 +24,23 @@ impl SubgraphClient {
     }
 
     /// Query Uniswap V2 subgraph
-    pub async fn query_uniswap_v2(&self, query: &str, variables: Option<Value>) -> Result<PoolQueryResult> {
-        self.query_subgraph(&self.config.subgraph.uniswap_v2_url, query, variables).await
+    pub async fn query_uniswap_v2(
+        &self,
+        query: &str,
+        variables: Option<Value>,
+    ) -> Result<PoolQueryResult> {
+        self.query_subgraph(&self.config.subgraph.uniswap_v2_url, query, variables)
+            .await
     }
 
     /// Query Uniswap V3 subgraph
-    pub async fn query_uniswap_v3(&self, query: &str, variables: Option<Value>) -> Result<PoolQueryResult> {
-        self.query_subgraph(&self.config.subgraph.uniswap_v3_url, query, variables).await
+    pub async fn query_uniswap_v3(
+        &self,
+        query: &str,
+        variables: Option<Value>,
+    ) -> Result<PoolQueryResult> {
+        self.query_subgraph(&self.config.subgraph.uniswap_v3_url, query, variables)
+            .await
     }
 
     /// Generic subgraph query method
@@ -47,7 +57,8 @@ impl SubgraphClient {
 
         debug!("Querying subgraph {}: {}", url, request_body);
 
-        let response = self.client
+        let response = self
+            .client
             .post(url)
             .json(&request_body)
             .send()
@@ -61,7 +72,9 @@ impl SubgraphClient {
             ))));
         }
 
-        let response_text = response.text().await
+        let response_text = response
+            .text()
+            .await
             .map_err(|e| DAppError::Subgraph(SubgraphError::Http(e.to_string())))?;
 
         let result: PoolQueryResult = serde_json::from_str(&response_text)
@@ -70,12 +83,12 @@ impl SubgraphClient {
         // Check for GraphQL errors
         if let Some(errors) = &result.errors {
             if !errors.is_empty() {
-                let error_messages: Vec<String> = errors
-                    .iter()
-                    .map(|e| e.message.clone())
-                    .collect();
-                
-                return Err(DAppError::Subgraph(SubgraphError::GraphQL(error_messages.join("; "))));
+                let error_messages: Vec<String> =
+                    errors.iter().map(|e| e.message.clone()).collect();
+
+                return Err(DAppError::Subgraph(SubgraphError::GraphQL(
+                    error_messages.join("; "),
+                )));
             }
         }
 
@@ -261,7 +274,7 @@ impl SubgraphClient {
         });
 
         let result = self.query_uniswap_v2(query, Some(variables)).await?;
-        
+
         // Extract swaps from response
         if let Some(data) = result.data {
             if let Some(swaps) = data.get("swaps") {
@@ -312,7 +325,7 @@ impl SubgraphClient {
         });
 
         let result = self.query_uniswap_v3(query, Some(variables)).await?;
-        
+
         // Extract swaps from response
         if let Some(data) = result.data {
             if let Some(swaps) = data.get("swaps") {
@@ -360,4 +373,4 @@ impl Clone for SubgraphClient {
             config: self.config.clone(),
         }
     }
-} 
+}

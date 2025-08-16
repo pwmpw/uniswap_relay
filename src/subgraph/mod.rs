@@ -1,3 +1,3 @@
 pub mod client;
 
-pub use client::SubgraphClient; 
+pub use client::SubgraphClient;

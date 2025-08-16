@@ -302,4 +302,4 @@ impl std::fmt::Display for UniswapVersion {
             UniswapVersion::V3 => write!(f, "v3"),
         }
     }
-} 
+}
