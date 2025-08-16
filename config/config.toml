@@ -1,0 +1,40 @@
+[subgraph]
+uniswap_v2_url = "https://api.thegraph.com/subgraphs/name/uniswap/uniswap-v2"
+uniswap_v3_url = "https://api.thegraph.com/subgraphs/name/uniswap/uniswap-v3"
+timeout_seconds = 30
+max_retries = 3
+polling_interval_seconds = 15
+
+[redis]
+url = "redis://localhost:6379"
+channel = "swap_events"
+connection_pool_size = 10
+timeout_ms = 5000
+retry_attempts = 3
+retry_delay_ms = 1000
+
+[application]
+log_level = "info"
+environment = "development"
+health_check_port = 8080
+metrics_port = 9090
+worker_threads = 4
+max_concurrent_tasks = 100
+
+[monitoring]
+enable_metrics = true
+enable_health_checks = true
+enable_structured_logging = true
+log_format = "json"
+metrics_interval_seconds = 15
+
+[rate_limiting]
+max_subgraph_requests_per_second = 50
+burst_size = 100
+window_size_seconds = 60
+
+[retry]
+max_attempts = 3
+initial_delay_ms = 1000
+max_delay_ms = 10000
+backoff_multiplier = 2.0 

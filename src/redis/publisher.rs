@@ -1,0 +1,220 @@
+use crate::config::AppConfig;
+use crate::error::{Result, RedisError};
+use crate::model::SwapEvent;
+use redis::{AsyncCommands, RedisResult, aio::ConnectionManager};
+use std::sync::Arc;
+use tokio::sync::mpsc;
+use tracing::{info, error, debug};
+
+/// Redis publisher for swap events
+#[derive(Clone)]
+pub struct RedisPublisher {
+    connection_manager: Arc<ConnectionManager>,
+    channel: String,
+    config: AppConfig,
+}
+
+impl RedisPublisher {
+    /// Create a new Redis publisher
+    pub async fn new(config: AppConfig) -> Result<Self> {
+        let client = redis::Client::open(config.redis.url.clone())
+            .map_err(|e| RedisError::Connection(e.to_string()))?;
+
+        let connection_manager = ConnectionManager::new(client).await
+            .map_err(|e| RedisError::Connection(e.to_string()))?;
+
+        info!("Redis publisher initialized successfully");
+
+        Ok(Self {
+            connection_manager: Arc::new(connection_manager),
+            channel: config.redis.channel.clone(),
+            config,
+        })
+    }
+
+    /// Publish a single swap event
+    pub async fn publish_event(&self, event: &SwapEvent) -> Result<()> {
+        let event_json = serde_json::to_string(event)
+            .map_err(|e| RedisError::Serialization(e.to_string()))?;
+
+        debug!("Publishing event to Redis channel {}: {}", self.channel, event.id);
+
+        let mut conn = (*self.connection_manager).clone();
+        let result: RedisResult<()> = conn
+            .publish(&self.channel, event_json)
+            .await;
+
+        match result {
+            Ok(_) => {
+                debug!("Event published successfully: {}", event.id);
+                Ok(())
+            }
+            Err(e) => {
+                error!("Failed to publish event {}: {}", event.id, e);
+                Err(RedisError::Publish(e.to_string()).into())
+            }
+        }
+    }
+
+    /// Publish multiple events in a batch
+    pub async fn publish_batch(&self, events: &[SwapEvent]) -> Result<()> {
+        if events.is_empty() {
+            return Ok(());
+        }
+
+        debug!("Publishing batch of {} events to Redis", events.len());
+
+        let mut conn = (*self.connection_manager).clone();
+        
+        // Use pipeline for batch publishing
+        let mut pipe = redis::pipe();
+        for event in events {
+            let event_json = serde_json::to_string(event)
+                .map_err(|e| RedisError::Serialization(e.to_string()))?;
+            pipe.publish(&self.channel, event_json);
+        }
+
+        let result: RedisResult<()> = pipe
+            .query_async(&mut conn)
+            .await;
+
+        match result {
+            Ok(_) => {
+                debug!("Batch of {} events published successfully", events.len());
+                Ok(())
+            }
+            Err(e) => {
+                error!("Failed to publish batch: {}", e);
+                Err(RedisError::Publish(e.to_string()).into())
+            }
+        }
+    }
+
+    /// Start publishing events from a channel receiver
+    pub async fn start_publishing(
+        self,
+        mut event_receiver: mpsc::Receiver<SwapEvent>,
+    ) -> Result<()> {
+        info!("Starting Redis publisher for channel: {}", self.channel);
+
+        while let Some(event) = event_receiver.recv().await {
+            if let Err(e) = self.publish_event(&event).await {
+                error!("Failed to publish event: {}", e);
+                // Continue processing other events
+            }
+        }
+
+        info!("Redis publisher stopped");
+        Ok(())
+    }
+
+    /// Test Redis connection
+    pub async fn test_connection(&self) -> Result<()> {
+        let mut conn = (*self.connection_manager).clone();
+        
+        // Use a simple command to test connection
+        let result: RedisResult<()> = conn
+            .set("test_connection", "ok")
+            .await;
+
+        match result {
+            Ok(_) => {
+                debug!("Redis connection test successful");
+                Ok(())
+            }
+            Err(e) => {
+                error!("Redis connection test failed: {}", e);
+                Err(RedisError::Connection(e.to_string()).into())
+            }
+        }
+    }
+
+    /// Get Redis server info
+    pub async fn get_info(&self) -> Result<String> {
+        let mut conn = (*self.connection_manager).clone();
+        
+        // Use a simple command to get basic info
+        let result: RedisResult<String> = conn
+            .get("redis_version")
+            .await;
+
+        match result {
+            Ok(version) => Ok(format!("Redis version: {}", version)),
+            Err(e) => {
+                error!("Failed to get Redis info: {}", e);
+                Err(RedisError::Connection(e.to_string()).into())
+            }
+        }
+    }
+
+    /// Get subscriber count for the channel
+    pub async fn get_subscriber_count(&self) -> Result<u64> {
+        let mut conn = (*self.connection_manager).clone();
+        
+        // For now, return a default value since pubsub commands are complex
+        // In a real implementation, you might want to use a different approach
+        Ok(0)
+    }
+
+    /// Publish with retry logic
+    async fn publish_with_retry(&self, event: &SwapEvent, max_retries: u32) -> Result<()> {
+        let mut attempts = 0;
+        let mut last_error = None;
+
+        while attempts < max_retries {
+            match self.publish_event(event).await {
+                Ok(_) => return Ok(()),
+                Err(e) => {
+                    last_error = Some(e);
+                    attempts += 1;
+                    
+                    if attempts < max_retries {
+                        let delay = tokio::time::Duration::from_millis(
+                            self.config.redis.retry_delay_ms * attempts as u64
+                        );
+                        tokio::time::sleep(delay).await;
+                    }
+                }
+            }
+        }
+
+        Err(last_error.unwrap_or_else(|| {
+            RedisError::Publish("Max retries exceeded".to_string()).into()
+        }))
+    }
+}
+
+/// Pool of Redis publishers for load balancing
+pub struct RedisPublisherPool {
+    publishers: Vec<RedisPublisher>,
+    current_index: usize,
+}
+
+impl RedisPublisherPool {
+    /// Create a new publisher pool
+    pub async fn new(config: &AppConfig, pool_size: usize) -> Result<Self> {
+        let mut publishers = Vec::with_capacity(pool_size);
+        
+        for _ in 0..pool_size {
+            let publisher = RedisPublisher::new(config.clone()).await?;
+            publishers.push(publisher);
+        }
+
+        Ok(Self {
+            publishers,
+            current_index: 0,
+        })
+    }
+
+    /// Get next publisher from the pool (round-robin)
+    pub fn get_publisher(&mut self) -> &RedisPublisher {
+        let publisher = &self.publishers[self.current_index];
+        self.current_index = (self.current_index + 1) % self.publishers.len();
+        publisher
+    }
+
+    /// Get all publishers
+    pub fn get_all_publishers(&self) -> &[RedisPublisher] {
+        &self.publishers
+    }
+} 

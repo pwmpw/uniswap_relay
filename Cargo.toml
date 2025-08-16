@@ -1,0 +1,65 @@
+[package]
+name = "uniswap_relay_dapp"
+version = "0.1.0"
+edition = "2021"
+authors = ["Your Name <your.email@example.com>"]
+description = "High-performance DApp for monitoring Uniswap events via subgraphs and Redis pub/sub"
+license = "MIT"
+repository = "https://github.com/pwmpw/uniswap_relay_dapp"
+keywords = ["blockchain", "defi", "uniswap", "subgraph", "redis"]
+categories = ["blockchain", "network-programming"]
+
+[dependencies]
+# Async runtime
+tokio = { version = "1.35", features = ["full"] }
+
+# GraphQL & HTTP
+reqwest = { version = "0.11", features = ["json", "rustls-tls"] }
+graphql_client = "0.13"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# Redis
+redis = { version = "0.23", features = ["tokio-comp", "connection-manager"] }
+
+# Configuration
+config = "0.14"
+toml = "0.8"
+
+# Logging & Telemetry
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
+tracing-appender = "0.2"
+
+# Error handling
+anyhow = "1.0"
+thiserror = "1.0"
+
+# Utilities
+chrono = { version = "0.4", features = ["serde"] }
+uuid = { version = "1.6", features = ["v4", "serde"] }
+hex = "0.4"
+base64 = "0.21"
+futures = "0.3"
+async-trait = "0.1"
+dashmap = "5.5"
+
+[[bin]]
+name = "uniswap_relay_dapp"
+path = "src/main.rs"
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = true
+
+[profile.dev]
+opt-level = 0
+debug = true
+debug-assertions = true
+overflow-checks = true
+
+[workspace]
+members = ["."] 
