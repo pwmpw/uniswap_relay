@@ -1,11 +1,11 @@
 
 
 services:
-  uniswap-relay-dapp:
+  uniswap-relay:
     build:
       context: ..
       dockerfile: docker/Dockerfile
-    container_name: uniswap-relay-dapp
+    container_name: uniswap-relay
     restart: unless-stopped
     environment:
       - ENVIRONMENT=production

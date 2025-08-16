@@ -1,8 +1,8 @@
 # Uniswap Relay DApp
 
-[![CI](https://github.com/pwmpw/uniswap_relay_dapp/workflows/CI/badge.svg)](https://github.com/pwmpw/uniswap_relay_dapp/actions?query=workflow%3ACI)
-[![Security Scan](https://github.com/pwmpw/uniswap_relay_dapp/actions/workflows/security.yml/badge.svg?branch=main)](https://github.com/pwmpw/uniswap_relay_dapp/actions/workflows/security.yml)
-[![Dependencies](https://github.com/pwmpw/uniswap_relay_dapp/actions/workflows/dependencies.yml/badge.svg)](https://github.com/pwmpw/uniswap_relay_dapp/actions/workflows/dependencies.yml)
+[![CI](https://github.com/pwmpw/uniswap_relay/workflows/CI/badge.svg)](https://github.com/pwmpw/uniswap_relay/actions?query=workflow%3ACI)
+[![Security Scan](https://github.com/pwmpw/uniswap_relay/actions/workflows/security.yml/badge.svg?branch=main)](https://github.com/pwmpw/uniswap_relay/actions/workflows/security.yml)
+[![Dependencies](https://github.com/pwmpw/uniswap_relay/actions/workflows/dependencies.yml/badge.svg)](https://github.com/pwmpw/uniswap_relay/actions/workflows/dependencies.yml)
 
 High-performance, production-ready DApp for monitoring Uniswap V2 and V3 swap events via The Graph subgraphs, with data enrichment and Redis pub/sub publishing.
 
@@ -38,8 +38,8 @@ High-performance, production-ready DApp for monitoring Uniswap V2 and V3 swap ev
 ### 1. Clone & Setup
 
 ```bash
-git clone https://github.com/pwmpw/uniswap_relay_dapp.git
-cd uniswap_relay_dapp
+git clone https://github.com/pwmpw/uniswap_relay.git
+cd uniswap_relay
 ```
 
 ### 2. Install Development Tools
@@ -153,7 +153,7 @@ python3 scripts/redis-listener.py
 ## 📁 Project Structure
 
 ```
-uniswap_relay_dapp/
+uniswap_relay/
 ├── src/
 │   ├── main.rs              # Entry point
 │   ├── config.rs            # Configuration
@@ -445,5 +445,5 @@ MIT License - see [LICENSE](LICENSE) file
 
 ## 🆘 Support
 
-- Issues: [GitHub Issues](https://github.com/pwmpw/uniswap_relay_dapp/issues)
-- Discussions: [GitHub Discussions](https://github.com/pwmpw/uniswap_relay_dapp/discussions) 
+- Issues: [GitHub Issues](https://github.com/pwmpw/uniswap_relay/issues)
+- Discussions: [GitHub Discussions](https://github.com/pwmpw/uniswap_relay/discussions) 

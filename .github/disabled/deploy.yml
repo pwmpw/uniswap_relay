@@ -184,7 +184,7 @@ jobs:
           echo "Deployment failed, initiating rollback..."
           # Add rollback logic here
           # Examples:
-          # - kubectl rollout undo deployment/uniswap-relay-dapp
+          # - kubectl rollout undo deployment/uniswap-relay
           # - docker-compose -f docker/docker-compose.production.yml up -d --force-recreate
 
       - name: Notify rollback

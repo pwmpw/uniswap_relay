@@ -269,26 +269,31 @@ impl SwapEvent {
         self.pool_info = Some(pool_info);
     }
 
+    #[allow(dead_code)]
     pub fn add_enriched_data(&mut self, enriched_data: EnrichedData) {
         self.enriched_data = Some(enriched_data);
     }
 
+    #[allow(dead_code)]
     pub fn set_block_info(&mut self, block_number: u64, timestamp: DateTime<Utc>) {
         self.block_number = block_number;
         self.timestamp = timestamp;
     }
 
+    #[allow(dead_code)]
     pub fn set_gas_info(&mut self, gas_used: u64, gas_price: String, gas_cost_usd: f64) {
         self.gas_used = Some(gas_used);
         self.gas_price = Some(gas_price);
         self.gas_cost_usd = Some(gas_cost_usd);
     }
 
+    #[allow(dead_code)]
     pub fn set_usd_amounts(&mut self, amount_in_usd: f64, amount_out_usd: f64) {
         self.amount_in_usd = Some(amount_in_usd);
         self.amount_out_usd = Some(amount_out_usd);
     }
 
+    #[allow(dead_code)]
     pub fn set_fee_info(&mut self, fee_amount: String, fee_usd: f64) {
         self.fee_amount = Some(fee_amount);
         self.fee_usd = Some(fee_usd);

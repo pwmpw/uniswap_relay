@@ -17,19 +17,19 @@ jobs:
         include:
           - os: ubuntu-latest
             target: x86_64-unknown-linux-gnu
-            artifact_name: uniswap-relay-dapp-linux-x86_64
+            artifact_name: uniswap-relay-linux-x86_64
           - os: ubuntu-latest
             target: aarch64-unknown-linux-gnu
-            artifact_name: uniswap-relay-dapp-linux-aarch64
+            artifact_name: uniswap-relay-linux-aarch64
           - os: macos-latest
             target: x86_64-apple-darwin
-            artifact_name: uniswap-relay-dapp-macos-x86_64
+            artifact_name: uniswap-relay-macos-x86_64
           - os: macos-latest
             target: aarch64-apple-darwin
-            artifact_name: uniswap-relay-dapp-macos-aarch64
+            artifact_name: uniswap-relay-macos-aarch64
           - os: windows-latest
             target: x86_64-pc-windows-msvc
-            artifact_name: uniswap-relay-dapp-windows-x86_64.exe
+            artifact_name: uniswap-relay-windows-x86_64.exe
 
     steps:
       - name: Checkout code
@@ -57,9 +57,9 @@ jobs:
         run: |
           cargo build --release --target ${{ matrix.target }}
           if [ "${{ runner.os }}" = "Windows" ]; then
-            cp target/${{ matrix.target }}/release/uniswap_relay_dapp.exe ${{ matrix.artifact_name }}
+            cp target/${{ matrix.target }}/release/uniswap_relay.exe ${{ matrix.artifact_name }}
           else
-            cp target/${{ matrix.target }}/release/uniswap_relay_dapp ${{ matrix.artifact_name }}
+            cp target/${{ matrix.target }}/release/uniswap_relay ${{ matrix.artifact_name }}
           fi
 
       - name: Create checksums
@@ -100,7 +100,7 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: |
-            ${{ secrets.DOCKERHUB_USERNAME }}/uniswap-relay-dapp
+            ${{ secrets.DOCKERHUB_USERNAME }}/uniswap-relay
           tags: |
             type=ref,event=branch
             type=ref,event=pr
@@ -133,16 +133,16 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           files: |
-            uniswap-relay-dapp-linux-x86_64/uniswap-relay-dapp-linux-x86_64
-            uniswap-relay-dapp-linux-x86_64/uniswap-relay-dapp-linux-x86_64.sha256
-            uniswap-relay-dapp-linux-aarch64/uniswap-relay-dapp-linux-aarch64
-            uniswap-relay-dapp-linux-aarch64/uniswap-relay-dapp-linux-aarch64.sha256
-            uniswap-relay-dapp-macos-x86_64/uniswap-relay-dapp-macos-x86_64
-            uniswap-relay-dapp-macos-x86_64/uniswap-relay-dapp-macos-x86_64.sha256
-            uniswap-relay-dapp-macos-aarch64/uniswap-relay-dapp-macos-aarch64
-            uniswap-relay-dapp-macos-aarch64/uniswap-relay-dapp-macos-aarch64.sha256
-            uniswap-relay-dapp-windows-x86_64.exe/uniswap-relay-dapp-windows-x86_64.exe
-            uniswap-relay-dapp-windows-x86_64.exe/uniswap-relay-dapp-windows-x86_64.exe.sha256
+            uniswap-relay-linux-x86_64/uniswap-relay-linux-x86_64
+            uniswap-relay-linux-x86_64/uniswap-relay-linux-x86_64.sha256
+            uniswap-relay-linux-aarch64/uniswap-relay-linux-aarch64
+            uniswap-relay-linux-aarch64/uniswap-relay-linux-aarch64.sha256
+            uniswap-relay-macos-x86_64/uniswap-relay-macos-x86_64
+            uniswap-relay-macos-x86_64/uniswap-relay-macos-x86_64.sha256
+            uniswap-relay-macos-aarch64/uniswap-relay-macos-aarch64
+            uniswap-relay-macos-aarch64/uniswap-relay-macos-aarch64.sha256
+            uniswap-relay-windows-x86_64.exe/uniswap-relay-windows-x86_64.exe
+            uniswap-relay-windows-x86_64.exe/uniswap-relay-windows-x86_64.exe.sha256
           draft: false
           prerelease: false
           generate_release_notes: true

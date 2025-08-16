@@ -18,7 +18,7 @@ metrics_timeout_seconds = 5
 
 # Logging configuration
 log_level = "info"
-log_file_path = "/var/log/uniswap_relay_dapp"
+log_file_path = "/var/log/uniswap_relay"
 log_max_size_mb = 100
 log_max_files = 5
 

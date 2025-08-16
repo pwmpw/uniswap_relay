@@ -30,6 +30,7 @@ impl MetricsCollector {
     }
 
     /// Record dropped events
+    #[allow(dead_code)]
     pub fn record_events_dropped(&self, count: u64) {
         self.events_dropped.fetch_add(count, Ordering::Relaxed);
     }
@@ -40,10 +41,11 @@ impl MetricsCollector {
     }
 
     /// Get current metrics
+    #[allow(dead_code)]
     pub fn get_metrics(&self) -> Metrics {
         let uptime = self.start_time.elapsed();
         let events_processed = self.events_processed.load(Ordering::Relaxed);
-        let events_dropped = self.events_dropped.load(Ordering::Relaxed);
+        let _events_dropped = self.events_dropped.load(Ordering::Relaxed);
         let errors_total = self.errors_total.load(Ordering::Relaxed);
 
         // Calculate rates (events per second)
@@ -75,6 +77,7 @@ impl MetricsCollector {
     }
 
     /// Start metrics collection loop
+    #[allow(dead_code)]
     pub async fn start_collection(&self) {
         let interval = Duration::from_secs(self.config.monitoring.metrics_interval_seconds);
         let metrics_collector = self.clone();
@@ -109,6 +112,7 @@ impl Clone for MetricsCollector {
 
 /// Metrics data structure
 #[derive(Debug, Clone)]
+#[allow(dead_code)]
 pub struct Metrics {
     pub events_processed_total: u64,
     pub events_processed_rate: f64,

@@ -14,8 +14,8 @@ pub struct SwapEventCollector {
     redis_publisher: RedisPublisher,
     metrics_collector: MetricsCollector,
     is_running: bool,
-    last_v2_block: u64,
-    last_v3_block: u64,
+    _last_v2_block: u64,
+    _last_v3_block: u64,
 }
 
 impl SwapEventCollector {
@@ -32,8 +32,8 @@ impl SwapEventCollector {
             redis_publisher,
             metrics_collector,
             is_running: false,
-            last_v2_block: 0,
-            last_v3_block: 0,
+            _last_v2_block: 0,
+            _last_v3_block: 0,
         }
     }
 
@@ -536,15 +536,17 @@ impl SwapEventCollector {
     }
 
     /// Get collector status
+    #[allow(dead_code)]
     pub fn status(&self) -> CollectorStatus {
         CollectorStatus {
             is_running: self.is_running,
-            last_v2_block: self.last_v2_block,
-            last_v3_block: self.last_v3_block,
+            last_v2_block: self._last_v2_block,
+            last_v3_block: self._last_v3_block,
         }
     }
 
     /// Perform health check
+    #[allow(dead_code)]
     pub async fn health_check(&self) -> Result<bool> {
         // Test subgraph connectivity
         let subgraph_healthy = self.subgraph_client.test_connectivity().await.is_ok();

@@ -2,11 +2,11 @@ use std::time::Duration;
 
 /// Exponential backoff strategy for retries
 pub struct ExponentialBackoff {
-    initial_delay: Duration,
-    max_delay: Duration,
-    multiplier: f64,
-    max_attempts: u32,
-    current_attempt: u32,
+    _initial_delay: Duration,
+    _max_delay: Duration,
+    _multiplier: f64,
+    _max_attempts: u32,
+    _current_attempt: u32,
 }
 
 impl ExponentialBackoff {
@@ -18,51 +18,55 @@ impl ExponentialBackoff {
         max_attempts: u32,
     ) -> Self {
         Self {
-            initial_delay,
-            max_delay,
-            multiplier,
-            max_attempts,
-            current_attempt: 0,
+            _initial_delay: initial_delay,
+            _max_delay: max_delay,
+            _multiplier: multiplier,
+            _max_attempts: max_attempts,
+            _current_attempt: 0,
         }
     }
 
     /// Get the next delay duration
+    #[allow(dead_code)]
     pub fn next_delay(&mut self) -> Option<Duration> {
-        if self.current_attempt >= self.max_attempts {
+        if self._current_attempt >= self._max_attempts {
             return None;
         }
 
-        let delay = if self.current_attempt == 0 {
-            self.initial_delay
+        let delay = if self._current_attempt == 0 {
+            self._initial_delay
         } else {
             let calculated_delay = self
-                .initial_delay
-                .mul_f64(self.multiplier.powi(self.current_attempt as i32));
+                ._initial_delay
+                .mul_f64(self._multiplier.powi(self._current_attempt as i32));
 
-            if calculated_delay > self.max_delay {
-                self.max_delay
+            if calculated_delay > self._max_delay {
+                self._max_delay
             } else {
                 calculated_delay
             }
         };
 
-        self.current_attempt += 1;
+        self._current_attempt += 1;
         Some(delay)
     }
 
     /// Reset the backoff counter
+    #[allow(dead_code)]
     pub fn reset(&mut self) {
-        self.current_attempt = 0;
+        self._current_attempt = 0;
     }
 
     /// Get current attempt number
+    #[allow(dead_code)]
     pub fn current_attempt(&self) -> u32 {
-        self.current_attempt
+        self._current_attempt
     }
 
     /// Check if max attempts reached
+    #[allow(dead_code)]
     pub fn exhausted(&self) -> bool {
-        self.current_attempt >= self.max_attempts
+        self._current_attempt >= self._max_attempts
     }
 }
 

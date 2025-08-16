@@ -96,6 +96,7 @@ impl SubgraphClient {
     }
 
     /// Get pool information by address from V2
+    #[allow(dead_code)]
     pub async fn get_v2_pool_info(&self, pool_address: &str) -> Result<Option<Value>> {
         let query = r#"
             query GetPair($pairId: ID!) {
@@ -144,6 +145,7 @@ impl SubgraphClient {
     }
 
     /// Get pool information by address from V3
+    #[allow(dead_code)]
     pub async fn get_v3_pool_info(&self, pool_address: &str) -> Result<Option<Value>> {
         let query = r#"
             query GetPool($poolId: ID!) {
@@ -188,6 +190,7 @@ impl SubgraphClient {
     }
 
     /// Get token information from V2
+    #[allow(dead_code)]
     pub async fn get_v2_token_info(&self, token_address: &str) -> Result<Option<Value>> {
         let query = r#"
             query GetToken($tokenId: ID!) {
@@ -214,6 +217,7 @@ impl SubgraphClient {
     }
 
     /// Get token information from V3
+    #[allow(dead_code)]
     pub async fn get_v3_token_info(&self, token_address: &str) -> Result<Option<Value>> {
         let query = r#"
             query GetToken($tokenId: ID!) {
@@ -240,6 +244,7 @@ impl SubgraphClient {
     }
 
     /// Get recent swaps for a V2 pool
+    #[allow(dead_code)]
     pub async fn get_v2_recent_swaps(&self, pool_address: &str, limit: u32) -> Result<Vec<Value>> {
         let query = r#"
             query GetRecentSwaps($pairId: ID!, $limit: Int!) {
@@ -288,6 +293,7 @@ impl SubgraphClient {
     }
 
     /// Get recent swaps for a V3 pool
+    #[allow(dead_code)]
     pub async fn get_v3_recent_swaps(&self, pool_address: &str, limit: u32) -> Result<Vec<Value>> {
         let query = r#"
             query GetRecentSwaps($poolId: ID!, $limit: Int!) {

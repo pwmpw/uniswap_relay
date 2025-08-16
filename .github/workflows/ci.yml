@@ -65,7 +65,7 @@ jobs:
       - name: Check binary size
         run: |
           echo "Binary size:"
-          ls -lh target/release/uniswap_relay_dapp
+          ls -lh target/release/uniswap_relay
 
   security:
     name: Security Audit
@@ -139,11 +139,11 @@ jobs:
 
       - name: Build Docker image
         run: |
-          docker build -f docker/Dockerfile -t uniswap-relay-dapp:test .
+          docker build -f docker/Dockerfile -t uniswap-relay:test .
 
       - name: Test Docker image
         run: |
-          docker run --rm uniswap-relay-dapp:test --help || true
+          docker run --rm uniswap-relay:test --help || true
 
   lint:
     name: Lint

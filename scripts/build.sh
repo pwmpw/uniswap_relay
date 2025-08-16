@@ -41,7 +41,7 @@ echo "🔨 Building in release mode..."
 cargo build --release
 
 # Check binary size
-BINARY_SIZE=$(du -h target/release/uniswap_relay_dapp | cut -f1)
+BINARY_SIZE=$(du -h target/release/uniswap_relay | cut -f1)
 echo "📊 Binary size: $BINARY_SIZE"
 
 # Run clippy for code quality
@@ -53,5 +53,5 @@ echo "🔒 Running security audit..."
 cargo audit
 
 echo "✅ Build completed successfully!"
-echo "📁 Binary location: target/release/uniswap_relay_dapp"
-echo "🚀 Run with: ./target/release/uniswap_relay_dapp" 
+echo "📁 Binary location: target/release/uniswap_relay"
+echo "🚀 Run with: ./target/release/uniswap_relay"

@@ -43,7 +43,7 @@ RUN useradd -r -s /bin/false app
 WORKDIR /app
 
 # Copy binary from builder stage
-COPY --from=builder /app/target/release/uniswap_relay_dapp /app/uniswap_relay_dapp
+COPY --from=builder /app/target/release/uniswap_relay /app/uniswap_relay
 
 # Copy configuration files
 COPY --from=builder /app/config /app/config
@@ -59,7 +59,7 @@ EXPOSE 8080 9090
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD ["/app/uniswap_relay_dapp", "--health-check"] || exit 1
+    CMD ["/app/uniswap_relay", "--health-check"] || exit 1
 
 # Run the application
-CMD ["/app/uniswap_relay_dapp"] 
+CMD ["/app/uniswap_relay"]

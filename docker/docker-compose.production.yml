@@ -60,8 +60,8 @@ services:
 
   # Uniswap Relay DApp
   app:
-    image: ${REGISTRY:-ghcr.io}/${IMAGE_NAME:-pwmpw/uniswap_relay_dapp}:${TAG:-latest}
-    container_name: uniswap_relay_dapp
+    image: ${REGISTRY:-ghcr.io}/${IMAGE_NAME:-pwmpw/uniswap_relay}:${TAG:-latest}
+    container_name: uniswap_relay
     restart: unless-stopped
     ports:
       - "8080:8080"  # Health check
@@ -72,7 +72,7 @@ services:
       - LOG_LEVEL=info
     volumes:
       - ./config:/app/config:ro
-      - app_logs:/var/log/uniswap_relay_dapp
+      - app_logs:/var/log/uniswap_relay
     depends_on:
       redis:
         condition: service_healthy

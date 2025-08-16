@@ -46,7 +46,7 @@ async fn main() -> Result<()> {
     info!("Subgraph connectivity verified");
 
     // Initialize Redis publisher
-    let mut redis_publisher = RedisPublisher::new(config.clone()).await?;
+    let redis_publisher = RedisPublisher::new(config.clone()).await?;
 
     // Test Redis connection
     redis_publisher.test_connection().await?;
@@ -132,6 +132,7 @@ async fn wait_for_shutdown() {
 }
 
 /// Handle graceful shutdown
+#[allow(dead_code)]
 async fn handle_shutdown() {
     info!("Initiating graceful shutdown...");
 

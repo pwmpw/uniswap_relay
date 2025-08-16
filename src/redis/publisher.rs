@@ -34,6 +34,7 @@ impl RedisPublisher {
     }
 
     /// Publish a single swap event
+    #[allow(dead_code)]
     pub async fn publish_event(&self, event: &SwapEvent) -> Result<()> {
         let event_json =
             serde_json::to_string(event).map_err(|e| RedisError::Serialization(e.to_string()))?;
@@ -91,6 +92,7 @@ impl RedisPublisher {
     }
 
     /// Start publishing events from a channel receiver
+    #[allow(dead_code)]
     pub async fn start_publishing(
         self,
         mut event_receiver: mpsc::Receiver<SwapEvent>,
@@ -128,11 +130,12 @@ impl RedisPublisher {
     }
 
     /// Get Redis server info
+    #[allow(dead_code)]
     pub async fn get_info(&self) -> Result<String> {
-        let mut conn = (*self.connection_manager).clone();
+        let mut _conn = (*self.connection_manager).clone();
 
         // Use a simple command to get basic info
-        let result: RedisResult<String> = conn.get("redis_version").await;
+        let result: RedisResult<String> = _conn.get("redis_version").await;
 
         match result {
             Ok(version) => Ok(format!("Redis version: {}", version)),
@@ -144,8 +147,9 @@ impl RedisPublisher {
     }
 
     /// Get subscriber count for the channel
+    #[allow(dead_code)]
     pub async fn get_subscriber_count(&self) -> Result<u64> {
-        let mut conn = (*self.connection_manager).clone();
+        let _conn = (*self.connection_manager).clone();
 
         // For now, return a default value since pubsub commands are complex
         // In a real implementation, you might want to use a different approach
@@ -153,6 +157,7 @@ impl RedisPublisher {
     }
 
     /// Publish with retry logic
+    #[allow(dead_code)]
     async fn publish_with_retry(&self, event: &SwapEvent, max_retries: u32) -> Result<()> {
         let mut attempts = 0;
         let mut last_error = None;
@@ -180,6 +185,7 @@ impl RedisPublisher {
 }
 
 /// Pool of Redis publishers for load balancing
+#[allow(dead_code)]
 pub struct RedisPublisherPool {
     publishers: Vec<RedisPublisher>,
     current_index: usize,
@@ -187,6 +193,7 @@ pub struct RedisPublisherPool {
 
 impl RedisPublisherPool {
     /// Create a new publisher pool
+    #[allow(dead_code)]
     pub async fn new(config: &AppConfig, pool_size: usize) -> Result<Self> {
         let mut publishers = Vec::with_capacity(pool_size);
 
@@ -202,6 +209,7 @@ impl RedisPublisherPool {
     }
 
     /// Get next publisher from the pool (round-robin)
+    #[allow(dead_code)]
     pub fn get_publisher(&mut self) -> &RedisPublisher {
         let publisher = &self.publishers[self.current_index];
         self.current_index = (self.current_index + 1) % self.publishers.len();
@@ -209,6 +217,7 @@ impl RedisPublisherPool {
     }
 
     /// Get all publishers
+    #[allow(dead_code)]
     pub fn get_all_publishers(&self) -> &[RedisPublisher] {
         &self.publishers
     }

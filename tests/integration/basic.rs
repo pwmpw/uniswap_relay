@@ -1,5 +1,5 @@
-use uniswap_relay_dapp::config::AppConfig;
-use uniswap_relay_dapp::error::Result;
+use uniswap_relay::config::AppConfig;
+use uniswap_relay::error::Result;
 
 #[tokio::test]
 async fn test_config_loading() -> Result<()> {
@@ -27,7 +27,7 @@ async fn test_config_validation() -> Result<()> {
 
 #[test]
 fn test_model_creation() {
-    use uniswap_relay_dapp::model::{SwapEvent, UniswapVersion, TokenInfo, PoolInfo};
+    use uniswap_relay::model::{SwapEvent, UniswapVersion, TokenInfo, PoolInfo};
     
     let token_in = TokenInfo {
         address: "0x1234".to_string(),
@@ -67,7 +67,7 @@ fn test_model_creation() {
 
 #[test]
 fn test_uniswap_version_display() {
-    use uniswap_relay_dapp::model::UniswapVersion;
+    use uniswap_relay::model::UniswapVersion;
     
     assert_eq!(UniswapVersion::V2.to_string(), "v2");
     assert_eq!(UniswapVersion::V3.to_string(), "v3");

@@ -2,8 +2,8 @@
 # A robust build system for development, testing, and deployment
 
 # Configuration
-PROJECT_NAME := uniswap_relay_dapp
-BINARY_NAME := uniswap_relay_dapp
+PROJECT_NAME := uniswap_relay
+BINARY_NAME := uniswap_relay
 VERSION := $(shell git describe --tags --always --dirty 2>/dev/null || echo "dev")
 BUILD_TIME := $(shell date -u '+%Y-%m-%d_%H:%M:%S_UTC')
 GIT_COMMIT := $(shell git rev-parse --short HEAD 2>/dev/null || echo "unknown")
