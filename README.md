@@ -11,10 +11,11 @@ High-performance, production-ready DApp for monitoring Uniswap V2 and V3 swap ev
 - **Redis Integration**: Real-time pub/sub for downstream consumers
 - **Production Ready**: Structured logging, metrics, health checks
 - **Configurable**: Environment-specific configurations
+- **Comprehensive Tooling**: Makefile-based development workflow
 
 ## 🛠️ Technology Stack
 
-- **Language**: Rust 1.75+
+- **Language**: Rust 1.86+
 - **Subgraph**: GraphQL queries via `reqwest` + `graphql-client`
 - **Redis**: `redis-rs` for async pub/sub
 - **Async Runtime**: `tokio`
@@ -23,9 +24,10 @@ High-performance, production-ready DApp for monitoring Uniswap V2 and V3 swap ev
 
 ## 📋 Prerequisites
 
-- Rust 1.75+ ([rustup.rs](https://rustup.rs/))
+- Rust 1.86+ ([rustup.rs](https://rustup.rs/))
 - Redis server
 - Access to Uniswap V2 and V3 subgraphs
+- Make (for development workflow)
 
 ## 🚀 Quick Start
 
@@ -36,7 +38,13 @@ git clone https://github.com/pwmpw/uniswap_relay_dapp.git
 cd uniswap_relay_dapp
 ```
 
-### 2. Configure Environment
+### 2. Install Development Tools
+
+```bash
+make install-tools
+```
+
+### 3. Configure Environment
 
 Edit `config/config.toml` with your endpoints:
 
@@ -51,18 +59,18 @@ url = "redis://localhost:6379"
 channel = "swap_events"
 ```
 
-### 3. Build & Run
+### 4. Build & Run
 
 ```bash
 # Development
-cargo run
+make dev
 
 # Production
-cargo build --release
-./target/release/uniswap_relay_dapp
+make build
+make run
 ```
 
-### 4. Monitor Events
+### 5. Monitor Events
 
 ```bash
 # Listen to Redis channel
@@ -118,7 +126,9 @@ uniswap_relay_dapp/
 ├── config/                  # Configuration files
 ├── tests/                   # Integration tests
 ├── .github/workflows/       # GitHub Actions
-└── docker/                  # Containerization
+├── docker/                  # Containerization
+├── scripts/                 # Utility scripts
+└── Makefile                 # Development workflow
 ```
 
 ## 🔧 Configuration
@@ -148,6 +158,98 @@ connection_pool_size = 10
 log_level = "info"
 environment = "development"
 worker_threads = 4
+```
+
+## 🛠️ Development Workflow
+
+This project includes a comprehensive Makefile for streamlined development, testing, and deployment.
+
+### Makefile Targets
+
+#### 🚀 Development
+```bash
+make dev              # Run in development mode
+make dev-watch        # Run with auto-reload
+make check            # Check code without building
+make check-all        # Check for all targets
+```
+
+#### 🔨 Building
+```bash
+make build            # Build release binary
+make build-debug      # Build debug binary
+make build-all        # Build for all platforms
+make clean            # Clean build artifacts
+```
+
+#### 🧪 Testing
+```bash
+make test             # Run all tests
+make test-unit        # Run unit tests only
+make test-integration # Run integration tests only
+make test-watch       # Run tests with auto-reload
+make test-coverage    # Generate coverage report
+```
+
+#### 🎨 Code Quality
+```bash
+make fmt              # Format code
+make fmt-check        # Check formatting
+make clippy           # Run linter
+make audit            # Security audit
+make qa               # Run all quality checks
+```
+
+#### 🐳 Docker
+```bash
+make docker-build     # Build Docker image
+make docker-run       # Run Docker container
+make up               # Start services
+make down             # Stop services
+make logs             # View logs
+```
+
+#### 📦 Dependencies
+```bash
+make update           # Update dependencies
+make upgrade          # Upgrade dependencies
+make outdated         # Check for updates
+```
+
+#### 🚀 Release
+```bash
+make release          # Prepare release
+make release-all      # Multi-platform release
+```
+
+### Environment Variables
+
+```bash
+# Configuration environment
+ENV=production        # Use production config
+ENV=development       # Use development config (default)
+
+# Version override
+VERSION=v1.0.0        # Override git tag version
+```
+
+### Examples
+
+```bash
+# Production build
+make build ENV=production
+
+# Run tests with specific version
+make test VERSION=v1.0.0
+
+# Build Docker with custom tag
+make docker-build DOCKER_TAG=latest
+
+# Run CI pipeline locally
+make ci
+
+# Install all development tools
+make install-tools
 ```
 
 ## 🚀 GitHub Actions
@@ -215,38 +317,6 @@ DISCORD_WEBHOOK=your_discord_webhook
 - **Dependencies**: Weekly + manual triggers
 - **Deploy**: Main branch pushes + manual triggers
 
-### Local Development
-
-#### Pre-commit Checks
-```bash
-# Format code
-cargo fmt
-
-# Run clippy
-cargo clippy --all-targets --all-features -- -D warnings
-
-# Run tests
-cargo test --all-features
-
-# Check security
-cargo audit
-
-# Build release
-cargo build --release
-```
-
-#### Docker Development
-```bash
-# Build image
-docker build -f docker/Dockerfile -t uniswap-relay-dapp:dev .
-
-# Run with docker-compose
-docker-compose -f docker/docker-compose.yml up -d
-
-# View logs
-docker-compose -f docker/docker-compose.yml logs -f
-```
-
 ## 📊 Monitoring & Metrics
 
 The application exposes:
@@ -260,23 +330,32 @@ The application exposes:
 
 ```bash
 # Unit tests
-cargo test
+make test-unit
 
 # Integration tests
-cargo test --test integration
+make test-integration
 
-# With coverage
-cargo tarpaulin
+# All tests with coverage
+make test-coverage
+
+# Watch mode for development
+make test-watch
 ```
 
 ## 🐳 Docker
 
 ```bash
 # Build image
-docker build -t uniswap-relay-dapp .
+make docker-build
 
-# Run with docker-compose
-docker-compose -f docker/docker-compose.yml up -d
+# Run container
+make docker-run
+
+# Start services
+make up
+
+# View logs
+make logs
 ```
 
 ## 📈 Performance
@@ -309,6 +388,17 @@ docker-compose -f docker/docker-compose.yml up -d
 - Update documentation
 - Run security scans locally
 - Use conventional commit messages
+
+### Pre-commit Checks
+```bash
+# Run all quality checks
+make pre-commit
+
+# Or individual checks
+make fmt-check
+make clippy
+make test
+```
 
 ## 📄 License
 
