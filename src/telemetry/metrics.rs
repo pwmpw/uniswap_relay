@@ -26,21 +26,28 @@ impl MetricsCollector {
 
     /// Record processed events
     pub fn record_events_processed(&self, count: u64) {
-        if count > 0 {
-            self.events_processed.fetch_add(count, Ordering::Relaxed);
-            
-            // Log high processing rates
-            if count > 1000 {
-                info!("High event processing rate: {} events", count);
+        match count.cmp(&0) {
+            std::cmp::Ordering::Greater => {
+                self.events_processed.fetch_add(count, Ordering::Relaxed);
+                
+                // Log high processing rates
+                if count > 1000 {
+                    info!("High event processing rate: {} events", count);
+                }
+                
+                // Check for potential issues with very high counts
+                if count > 10000 {
+                    warn!("Very high event processing rate: {} events, potential burst", count);
+                }
             }
-            
-            // Check for potential issues with very high counts
-            if count > 10000 {
-                warn!("Very high event processing rate: {} events, potential burst", count);
+            std::cmp::Ordering::Equal => {
+                // Log when no events are processed (potential issue)
+                debug!("No events processed in this cycle");
             }
-        } else if count == 0 {
-            // Log when no events are processed (potential issue)
-            debug!("No events processed in this cycle");
+            std::cmp::Ordering::Less => {
+                // This shouldn't happen with u64, but handle it gracefully
+                warn!("Negative event count received: {}", count);
+            }
         }
     }
 
@@ -103,12 +110,17 @@ impl MetricsCollector {
             0.0
         };
         
-        // Calculate drop rate
-        let drop_rate = if uptime_secs > 0.0 {
+        // Calculate drop rate for potential future use
+        let _drop_rate = if uptime_secs > 0.0 {
             events_dropped as f64 / uptime_secs
         } else {
             0.0
         };
+        
+        // Log drop rate if it's significant
+        if _drop_rate > 0.1 { // More than 10% drop rate
+            warn!("High event drop rate: {:.2}%", _drop_rate * 100.0);
+        }
 
         // Log metrics collection
         debug!("Metrics collected - processed: {}, dropped: {}, errors: {}, uptime: {}s", 

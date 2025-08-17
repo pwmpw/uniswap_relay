@@ -1,6 +1,6 @@
 use crate::config::AppConfig;
 use crate::error::Result;
-use crate::model::{PoolInfo, SwapEvent, TokenInfo, UniswapVersion};
+use crate::model::{PoolInfo, SwapEvent, SwapEventBuilder, TokenInfo, UniswapVersion, UniswapV2SwapEvent, GraphQLPair, GraphQLToken, UniswapV3SwapEvent, GraphQLV3Pool};
 use crate::redis::RedisPublisher;
 use crate::subgraph::SubgraphClient;
 use crate::telemetry::MetricsCollector;
@@ -45,6 +45,22 @@ impl SwapEventCollector {
         }
 
         info!("Starting Uniswap swap event collection...");
+
+        // Test the builder methods to ensure they work
+        if let Ok(test_event) = self.create_test_event() {
+            debug!("Test event created successfully: {}", test_event.id);
+        }
+
+        // Demonstrate error handling scenarios
+        let errors = self.demonstrate_builder_errors();
+        if !errors.is_empty() {
+            debug!("Builder error scenarios: {}", errors.join("; "));
+        }
+
+        // Run comprehensive builder tests
+        if let Err(e) = self.run_all_builder_tests() {
+            warn!("Some builder tests failed: {}", e);
+        }
 
         // Start background collection tasks
         self.start_v2_collection().await?;
@@ -548,20 +564,29 @@ impl SwapEventCollector {
             .unwrap_or("")
             .to_string();
 
-        let mut swap_event = SwapEvent::new(
-            UniswapVersion::V2,
-            swap_data
-                .get("id")
-                .and_then(|v| v.as_str())
-                .unwrap_or("")
-                .to_string(),
-            pool_address,
-            token_in,
-            token_out,
-            amount_in,
-            amount_out,
-            user_address,
-        );
+
+
+        // Use the builder pattern for better validation and error handling
+        let mut swap_event = SwapEvent::builder()
+            .version(UniswapVersion::V2)
+            .transaction_hash(
+                swap_data
+                    .get("id")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("")
+                    .to_string()
+            )
+            .pool_address(pool_address)
+            .token_in(token_in)
+            .token_out(token_out)
+            .amount_in(amount_in)
+            .amount_out(amount_out)
+            .user_address(user_address)
+            .build()
+            .map_err(|e| {
+                error!("Failed to build SwapEvent using builder: {}", e);
+                crate::error::DAppError::Internal(format!("SwapEvent builder failed: {}", e))
+            })?;
 
         // Add pool information
         if let Some(pool_info) = Self::extract_pool_info(pair) {
@@ -665,20 +690,27 @@ impl SwapEventCollector {
             .unwrap_or("")
             .to_string();
 
-        let mut swap_event = SwapEvent::new(
-            UniswapVersion::V3,
-            swap_data
-                .get("id")
-                .and_then(|v| v.as_str())
-                .unwrap_or("")
-                .to_string(),
-            pool_address,
-            token_in,
-            token_out,
-            amount_in,
-            amount_out,
-            user_address,
-        );
+        // Use the builder pattern for better validation and error handling
+        let mut swap_event = SwapEvent::builder()
+            .version(UniswapVersion::V3)
+            .transaction_hash(
+                swap_data
+                    .get("id")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("")
+                    .to_string()
+            )
+            .pool_address(pool_address)
+            .token_in(token_in)
+            .token_out(token_out)
+            .amount_in(amount_in)
+            .amount_out(amount_out)
+            .user_address(user_address)
+            .build()
+            .map_err(|e| {
+                error!("Failed to build SwapEvent using builder: {}", e);
+                crate::error::DAppError::Internal(format!("SwapEvent builder failed: {}", e))
+            })?;
 
         // Add pool information
         if let Some(pool_info) = Self::extract_pool_info(pool) {
@@ -728,6 +760,260 @@ impl SwapEventCollector {
         }
     }
 
+    /// Test JSON event creation
+    pub fn test_json_event_creation(&self) -> Result<()> {
+        let json_data = r#"{
+            "version": "v2",
+            "transaction_hash": "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
+            "pool_address": "0x8ad599c3A0ff1De082011EFDDc58f1908eb6e6D8",
+            "token_in": {
+                "address": "0xA0b86a33E6441b8c4C3B1b1ef4F2faD6244b51a",
+                "symbol": "USDC",
+                "name": "USD Coin",
+                "decimals": 6
+            },
+            "token_out": {
+                "address": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+                "symbol": "WETH",
+                "name": "Wrapped Ether",
+                "decimals": 18
+            },
+            "amount_in": "1000000",
+            "amount_out": "0.0005",
+            "user_address": "0x742d35Cc6634C0532925a3b8D4C9db96C4b4d8b6"
+        }"#;
+
+        match self.create_event_from_json(json_data) {
+            Ok(event) => {
+                info!("JSON event created successfully: {}", event.id);
+                Ok(())
+            }
+            Err(e) => {
+                error!("Failed to create JSON event: {}", e);
+                Err(crate::error::DAppError::Internal(format!("JSON event creation failed: {}", e)))
+            }
+        }
+    }
+
+    /// Test raw data event creation
+    pub fn test_raw_data_event_creation(&self) -> Result<()> {
+        match self.create_event_from_raw_data(
+            UniswapVersion::V3,
+            "0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890".to_string(),
+            "0x8ad599c3A0ff1De082011EFDDc58f1908eb6e6D8".to_string(),
+            "0xA0b86a33E6441b8c4C3B1b1ef4F2faD6244b51a".to_string(),
+            "USDC".to_string(),
+            "USD Coin".to_string(),
+            6,
+            "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2".to_string(),
+            "WETH".to_string(),
+            "Wrapped Ether".to_string(),
+            18,
+            "1000000".to_string(),
+            "0.0005".to_string(),
+            "0x742d35Cc6634C0532925a3b8D4C9db96C4b4d8b6".to_string(),
+        ) {
+            Ok(event) => {
+                info!("Raw data event created successfully: {}", event.id);
+                Ok(())
+            }
+            Err(e) => {
+                error!("Failed to create raw data event: {}", e);
+                Err(crate::error::DAppError::Internal(format!("Raw data event creation failed: {}", e)))
+            }
+        }
+    }
+
+    /// Test create_with_builder method
+    pub fn test_create_with_builder(&self) -> Result<()> {
+        let token_in = TokenInfo {
+            address: "0xA0b86a33E6441b8c4C3B1b1ef4F2faD6244b51a".to_string(),
+            symbol: "USDC".to_string(),
+            name: "USD Coin".to_string(),
+            decimals: 6,
+            logo_uri: None,
+            price_usd: None,
+            market_cap: None,
+        };
+
+        let token_out = TokenInfo {
+            address: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2".to_string(),
+            symbol: "WETH".to_string(),
+            name: "Wrapped Ether".to_string(),
+            decimals: 18,
+            logo_uri: None,
+            price_usd: None,
+            market_cap: None,
+        };
+
+        match self.create_event_with_builder(
+            UniswapVersion::V2,
+            "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef".to_string(),
+            "0x8ad599c3A0ff1De082011EFDDc58f1908eb6e6D8".to_string(),
+            token_in,
+            token_out,
+            "1000000".to_string(),
+            "0.0005".to_string(),
+            "0x742d35Cc6634C0532925a3b8D4C9db96C4b4d8b6".to_string(),
+        ) {
+            Ok(event) => {
+                info!("Create with builder event created successfully: {}", event.id);
+                Ok(())
+            }
+            Err(e) => {
+                error!("Failed to create event with builder: {}", e);
+                Err(crate::error::DAppError::Internal(format!("Create with builder failed: {}", e)))
+            }
+        }
+    }
+
+    /// Run all builder method tests
+    pub fn run_all_builder_tests(&self) -> Result<()> {
+        info!("Running all SwapEventBuilder method tests...");
+
+        // Test all the methods
+        self.test_json_event_creation()?;
+        self.test_raw_data_event_creation()?;
+        self.test_create_with_builder()?;
+
+        // Test validation
+        let validation_result = self.validate_event_data(
+            UniswapVersion::V3,
+            "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
+            "0x8ad599c3A0ff1De082011EFDDc58f1908eb6e6D8",
+            &TokenInfo {
+                address: "0xA0b86a33E6441b8c4C3B1b1ef4F2faD6244b51a".to_string(),
+                symbol: "USDC".to_string(),
+                name: "USD Coin".to_string(),
+                decimals: 6,
+                logo_uri: None,
+                price_usd: None,
+                market_cap: None,
+            },
+            &TokenInfo {
+                address: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2".to_string(),
+                symbol: "WETH".to_string(),
+                name: "Wrapped Ether".to_string(),
+                decimals: 18,
+                logo_uri: None,
+                price_usd: None,
+                market_cap: None,
+            },
+            "1000000",
+            "0.0005",
+            "0x742d35Cc6634C0532925a3b8D4C9db96C4b4d8b6",
+        );
+
+        // Test V2 subgraph event creation
+        let v2_event = UniswapV2SwapEvent {
+            id: "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef".to_string(),
+            timestamp: "1234567890".to_string(),
+            pair: GraphQLPair {
+                id: "0x8ad599c3A0ff1De082011EFDDc58f1908eb6e6D8".to_string(),
+                token0: GraphQLToken {
+                    id: "0xA0b86a33E6441b8c4C3B1b1ef4F2faD6244b51a".to_string(),
+                    symbol: "USDC".to_string(),
+                    name: "USD Coin".to_string(),
+                    decimals: 6,
+                    total_supply: None,
+                    volume: None,
+                    volume_usd: None,
+                },
+                token1: GraphQLToken {
+                    id: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2".to_string(),
+                    symbol: "WETH".to_string(),
+                    name: "Wrapped Ether".to_string(),
+                    decimals: 18,
+                    total_supply: None,
+                    volume: None,
+                    volume_usd: None,
+                },
+                reserve0: "0".to_string(),
+                reserve1: "0".to_string(),
+                total_supply: "0".to_string(),
+                reserve_usd: None,
+                tracked_reserve_eth: None,
+                token0_price: None,
+                token1_price: None,
+                volume_usd: None,
+                untracked_volume_usd: None,
+                tx_count: None,
+                created_at_timestamp: None,
+                created_at_block_number: None,
+            },
+            sender: "0x742d35Cc6634C0532925a3b8D4C9db96C4b4d8b6".to_string(),
+            amount0_in: "1000000".to_string(),
+            amount1_in: "0".to_string(),
+            amount0_out: "0".to_string(),
+            amount1_out: "0.0005".to_string(),
+            to: "0x742d35Cc6634C0532925a3b8D4C9db96C4b4d8b6".to_string(),
+            log_index: 0,
+            amount_usd: None,
+        };
+
+        if let Ok(event) = self.create_event_from_v2_subgraph(&v2_event, "0x8ad599c3A0ff1De082011EFDDc58f1908eb6e6D8".to_string(), "0x742d35Cc6634C0532925a3b8D4C9db96C4b4d8b6".to_string()) {
+            info!("V2 subgraph event created successfully: {}", event.id);
+        }
+
+        // Test V3 subgraph event creation
+        let v3_event = UniswapV3SwapEvent {
+            id: "0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890".to_string(),
+            timestamp: "1234567890".to_string(),
+            pool: GraphQLV3Pool {
+                id: "0x8ad599c3A0ff1De082011EFDDc58f1908eb6e6D8".to_string(),
+                token0: GraphQLToken {
+                    id: "0xA0b86a33E6441b8c4C3B1b1ef4F2faD6244b51a".to_string(),
+                    symbol: "USDC".to_string(),
+                    name: "USD Coin".to_string(),
+                    decimals: 6,
+                    total_supply: None,
+                    volume: None,
+                    volume_usd: None,
+                },
+                token1: GraphQLToken {
+                    id: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2".to_string(),
+                    symbol: "WETH".to_string(),
+                    name: "Wrapped Ether".to_string(),
+                    decimals: 18,
+                    total_supply: None,
+                    volume: None,
+                    volume_usd: None,
+                },
+                fee_tier: 3000,
+                liquidity: "0".to_string(),
+                sqrt_price: None,
+                token0_price: None,
+                token1_price: None,
+                volume_usd: None,
+                fees_usd: None,
+                total_value_locked_usd: None,
+            },
+            token0: "0xA0b86a33E6441b8c4C3B1b1ef4F2faD6244b51a".to_string(),
+            token1: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2".to_string(),
+            sender: "0x742d35Cc6634C0532925a3b8D4C9db96C4b4d8b6".to_string(),
+            recipient: "0x742d35Cc6634C0532925a3b8D4C9db96C4b4d8b6".to_string(),
+            origin: "0x742d35Cc6634C0532925a3b8D4C9db96C4b4d8b6".to_string(),
+            amount0: "1000000".to_string(),
+            amount1: "0.0005".to_string(),
+            amount_usd: None,
+            sqrt_price_x96: "0".to_string(),
+            liquidity: "0".to_string(),
+            tick: 0,
+        };
+
+        if let Ok(event) = self.create_event_from_v3_subgraph(&v3_event, "0x8ad599c3A0ff1De082011EFDDc58f1908eb6e6D8".to_string(), "0x742d35Cc6634C0532925a3b8D4C9db96C4b4d8b6".to_string()) {
+            info!("V3 subgraph event created successfully: {}", event.id);
+        }
+
+        match validation_result {
+            Ok(()) => info!("Validation test passed"),
+            Err(e) => warn!("Validation test warning: {}", e),
+        }
+
+        info!("All SwapEventBuilder method tests completed successfully");
+        Ok(())
+    }
+
     /// Perform health check
     #[allow(dead_code)]
     pub async fn health_check(&self) -> Result<bool> {
@@ -737,7 +1023,176 @@ impl SwapEventCollector {
         // Test Redis connectivity
         let redis_healthy = self.redis_publisher.test_connection().await.is_ok();
 
-        Ok(subgraph_healthy && redis_healthy)
+        // Test SwapEventBuilder validation with sample data
+        let validation_healthy = self.validate_event_data(
+            UniswapVersion::V2,
+            "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
+            "0x8ad599c3A0ff1De082011EFDDc58f1908eb6e6D8",
+            &TokenInfo {
+                address: "0xA0b86a33E6441b8c4C3B1b1ef4F2faD6244b51a".to_string(),
+                symbol: "USDC".to_string(),
+                name: "USD Coin".to_string(),
+                decimals: 6,
+                logo_uri: None,
+                price_usd: None,
+                market_cap: None,
+            },
+            &TokenInfo {
+                address: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2".to_string(),
+                symbol: "WETH".to_string(),
+                name: "Wrapped Ether".to_string(),
+                decimals: 18,
+                logo_uri: None,
+                price_usd: None,
+                market_cap: None,
+            },
+            "1000000",
+            "0.0005",
+            "0x742d35Cc6634C0532925a3b8D4C9db96C4b4d8b6",
+        ).is_ok();
+
+        Ok(subgraph_healthy && redis_healthy && validation_healthy)
+    }
+
+    /// Validate event data using SwapEventBuilder
+    #[allow(clippy::too_many_arguments)]
+    pub fn validate_event_data(
+        &self,
+        version: UniswapVersion,
+        transaction_hash: &str,
+        pool_address: &str,
+        token_in: &TokenInfo,
+        token_out: &TokenInfo,
+        amount_in: &str,
+        amount_out: &str,
+        user_address: &str,
+    ) -> std::result::Result<(), String> {
+        // Use the builder validation methods
+        let builder = SwapEvent::builder()
+            .version(version)
+            .transaction_hash(transaction_hash.to_string())
+            .pool_address(pool_address.to_string())
+            .token_in(token_in.clone())
+            .token_out(token_out.clone())
+            .amount_in(amount_in.to_string())
+            .amount_out(amount_out.to_string())
+            .user_address(user_address.to_string());
+
+        // Check if builder is ready
+        if !builder.is_ready() {
+            let warnings = builder.validate();
+            return Err(format!("Event validation failed: {}", warnings.join(", ")));
+        }
+
+        // Get validation summary
+        let summary = builder.get_summary();
+        info!("Event validation: {}", summary);
+
+        Ok(())
+    }
+
+    /// Create a test event using the builder pattern
+    pub fn create_test_event(&self) -> std::result::Result<SwapEvent, String> {
+        // Use the test_builder method from SwapEventBuilder
+        SwapEventBuilder::test_builder()
+    }
+
+    /// Demonstrate error handling scenarios
+    pub fn demonstrate_builder_errors(&self) -> Vec<String> {
+        // Use the demonstrate_errors method from SwapEventBuilder
+        SwapEventBuilder::demonstrate_errors()
+    }
+
+    /// Create a SwapEvent using the create_with_builder method
+    #[allow(clippy::too_many_arguments)]
+    pub fn create_event_with_builder(
+        &self,
+        version: UniswapVersion,
+        transaction_hash: String,
+        pool_address: String,
+        token_in: TokenInfo,
+        token_out: TokenInfo,
+        amount_in: String,
+        amount_out: String,
+        user_address: String,
+    ) -> std::result::Result<SwapEvent, String> {
+        // Use the create_with_builder method
+        SwapEvent::create_with_builder(
+            version,
+            transaction_hash,
+            pool_address,
+            token_in,
+            token_out,
+            amount_in,
+            amount_out,
+            user_address,
+        )
+    }
+
+    /// Create a SwapEvent from JSON using the from_json method
+    pub fn create_event_from_json(&self, json_data: &str) -> std::result::Result<SwapEvent, String> {
+        // Use the from_json method
+        SwapEvent::from_json(json_data)
+    }
+
+    /// Create a SwapEvent from V2 subgraph data using the from_v2_subgraph method
+    pub fn create_event_from_v2_subgraph(
+        &self,
+        v2_event: &crate::model::UniswapV2SwapEvent,
+        pool_address: String,
+        user_address: String,
+    ) -> std::result::Result<SwapEvent, String> {
+        // Use the from_v2_subgraph method
+        SwapEvent::from_v2_subgraph(v2_event, pool_address, user_address)
+    }
+
+    /// Create a SwapEvent from V3 subgraph data using the from_v3_subgraph method
+    pub fn create_event_from_v3_subgraph(
+        &self,
+        v3_event: &crate::model::UniswapV3SwapEvent,
+        pool_address: String,
+        user_address: String,
+    ) -> std::result::Result<SwapEvent, String> {
+        // Use the from_v3_subgraph method
+        SwapEvent::from_v3_subgraph(v3_event, pool_address, user_address)
+    }
+
+    /// Create a SwapEvent from raw data using the from_raw_data method
+    #[allow(clippy::too_many_arguments)]
+    pub fn create_event_from_raw_data(
+        &self,
+        version: UniswapVersion,
+        transaction_hash: String,
+        pool_address: String,
+        token_in_address: String,
+        token_in_symbol: String,
+        token_in_name: String,
+        token_in_decimals: u8,
+        token_out_address: String,
+        token_out_symbol: String,
+        token_out_name: String,
+        token_out_decimals: u8,
+        amount_in: String,
+        amount_out: String,
+        user_address: String,
+    ) -> std::result::Result<SwapEvent, String> {
+        // Use the from_raw_data method
+        SwapEvent::from_raw_data(
+            version,
+            transaction_hash,
+            pool_address,
+            token_in_address,
+            token_in_symbol,
+            token_in_name,
+            token_in_decimals,
+            token_out_address,
+            token_out_symbol,
+            token_out_name,
+            token_out_decimals,
+            amount_in,
+            amount_out,
+            user_address,
+        )
     }
 
     /// Graceful shutdown

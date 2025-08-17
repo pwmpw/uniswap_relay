@@ -64,8 +64,7 @@ impl RedisPublisher {
             self.channel, event.id
         );
 
-        let mut conn = (*self.connection_manager).clone();
-        
+        #[allow(unused_mut)]
         let mut conn = (*self.connection_manager).clone();
         let result: RedisResult<()> = conn.publish(&self.channel, event_json).await;
 

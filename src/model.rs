@@ -1,6 +1,7 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use tracing::warn;
 
 /// Represents a normalized Uniswap swap event
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -231,6 +232,7 @@ pub struct Metrics {
 }
 
 impl SwapEvent {
+    #[allow(dead_code)]
     #[allow(clippy::too_many_arguments)]
     pub fn new(
         version: UniswapVersion,
@@ -272,6 +274,7 @@ impl SwapEvent {
     }
 
     /// Create a SwapEvent using the builder pattern with validation
+    #[allow(dead_code)]
     #[allow(clippy::too_many_arguments)]
     pub fn create_with_builder(
         version: UniswapVersion,
@@ -297,6 +300,320 @@ impl SwapEvent {
         let warnings = builder.validate();
         if !warnings.is_empty() {
             eprintln!("SwapEvent: Builder validation warnings: {}", warnings.join(", "));
+        }
+
+        builder.build()
+    }
+
+    /// Create a SwapEvent from Uniswap V2 subgraph data using builder
+    #[allow(dead_code)]
+    pub fn from_v2_subgraph(
+        v2_event: &UniswapV2SwapEvent,
+        pool_address: String,
+        user_address: String,
+    ) -> Result<Self, String> {
+        // Parse token information from the V2 event
+        let token_in = if v2_event.amount0_in != "0" {
+            TokenInfo {
+                address: v2_event.pair.token0.id.clone(),
+                symbol: v2_event.pair.token0.symbol.clone(),
+                name: v2_event.pair.token0.name.clone(),
+                decimals: v2_event.pair.token0.decimals,
+                logo_uri: None,
+                price_usd: None,
+                market_cap: None,
+            }
+        } else {
+            TokenInfo {
+                address: v2_event.pair.token1.id.clone(),
+                symbol: v2_event.pair.token1.symbol.clone(),
+                name: v2_event.pair.token1.name.clone(),
+                decimals: v2_event.pair.token1.decimals,
+                logo_uri: None,
+                price_usd: None,
+                market_cap: None,
+            }
+        };
+
+        let token_out = if v2_event.amount0_out != "0" {
+            TokenInfo {
+                address: v2_event.pair.token0.id.clone(),
+                symbol: v2_event.pair.token0.symbol.clone(),
+                name: v2_event.pair.token0.name.clone(),
+                decimals: v2_event.pair.token0.decimals,
+                logo_uri: None,
+                price_usd: None,
+                market_cap: None,
+            }
+        } else {
+            TokenInfo {
+                address: v2_event.pair.token1.id.clone(),
+                symbol: v2_event.pair.token1.symbol.clone(),
+                name: v2_event.pair.token1.name.clone(),
+                decimals: v2_event.pair.token1.decimals,
+                logo_uri: None,
+                price_usd: None,
+                market_cap: None,
+            }
+        };
+
+        let amount_in = if v2_event.amount0_in != "0" {
+            v2_event.amount0_in.clone()
+        } else {
+            v2_event.amount1_in.clone()
+        };
+
+        let amount_out = if v2_event.amount0_out != "0" {
+            v2_event.amount0_out.clone()
+        } else {
+            v2_event.amount1_out.clone()
+        };
+
+        // Use the builder pattern
+        Self::builder()
+            .version(UniswapVersion::V2)
+            .transaction_hash(v2_event.id.clone())
+            .pool_address(pool_address)
+            .token_in(token_in)
+            .token_out(token_out)
+            .amount_in(amount_in)
+            .amount_out(amount_out)
+            .user_address(user_address)
+            .build()
+    }
+
+    /// Create a SwapEvent from Uniswap V3 subgraph data using builder
+    #[allow(dead_code)]
+    pub fn from_v3_subgraph(
+        v3_event: &UniswapV3SwapEvent,
+        pool_address: String,
+        user_address: String,
+    ) -> Result<Self, String> {
+        // Parse token information from the V3 event
+        let token_in = if v3_event.amount0.parse::<f64>().unwrap_or(0.0) < 0.0 {
+            TokenInfo {
+                address: v3_event.pool.token0.id.clone(),
+                symbol: v3_event.pool.token0.symbol.clone(),
+                name: v3_event.pool.token0.name.clone(),
+                decimals: v3_event.pool.token0.decimals,
+                logo_uri: None,
+                price_usd: None,
+                market_cap: None,
+            }
+        } else {
+            TokenInfo {
+                address: v3_event.pool.token1.id.clone(),
+                symbol: v3_event.pool.token1.symbol.clone(),
+                name: v3_event.pool.token1.name.clone(),
+                decimals: v3_event.pool.token1.decimals,
+                logo_uri: None,
+                price_usd: None,
+                market_cap: None,
+            }
+        };
+
+        let token_out = if v3_event.amount0.parse::<f64>().unwrap_or(0.0) > 0.0 {
+            TokenInfo {
+                address: v3_event.pool.token0.id.clone(),
+                symbol: v3_event.pool.token0.symbol.clone(),
+                name: v3_event.pool.token0.name.clone(),
+                decimals: v3_event.pool.token0.decimals,
+                logo_uri: None,
+                price_usd: None,
+                market_cap: None,
+            }
+        } else {
+            TokenInfo {
+                address: v3_event.pool.token1.id.clone(),
+                symbol: v3_event.pool.token1.symbol.clone(),
+                name: v3_event.pool.token1.name.clone(),
+                decimals: v3_event.pool.token1.decimals,
+                logo_uri: None,
+                price_usd: None,
+                market_cap: None,
+            }
+        };
+
+        let amount_in = if v3_event.amount0.parse::<f64>().unwrap_or(0.0) < 0.0 {
+            v3_event.amount0.clone()
+        } else {
+            v3_event.amount1.clone()
+        };
+
+        let amount_out = if v3_event.amount0.parse::<f64>().unwrap_or(0.0) > 0.0 {
+            v3_event.amount0.clone()
+        } else {
+            v3_event.amount1.clone()
+        };
+
+        // Use the builder pattern
+        Self::builder()
+            .version(UniswapVersion::V3)
+            .transaction_hash(v3_event.id.clone())
+            .pool_address(pool_address)
+            .token_in(token_in)
+            .token_out(token_out)
+            .amount_in(amount_in)
+            .amount_out(amount_out)
+            .user_address(user_address)
+            .build()
+    }
+
+    /// Create a SwapEvent from raw data using builder with validation
+    #[allow(clippy::too_many_arguments)]
+    pub fn from_raw_data(
+        version: UniswapVersion,
+        transaction_hash: String,
+        pool_address: String,
+        token_in_address: String,
+        token_in_symbol: String,
+        token_in_name: String,
+        token_in_decimals: u8,
+        token_out_address: String,
+        token_out_symbol: String,
+        token_out_name: String,
+        token_out_decimals: u8,
+        amount_in: String,
+        amount_out: String,
+        user_address: String,
+    ) -> Result<Self, String> {
+        // Create TokenInfo structs
+        let token_in = TokenInfo {
+            address: token_in_address,
+            symbol: token_in_symbol,
+            name: token_in_name,
+            decimals: token_in_decimals,
+            logo_uri: None,
+            price_usd: None,
+            market_cap: None,
+        };
+
+        let token_out = TokenInfo {
+            address: token_out_address,
+            symbol: token_out_symbol,
+            name: token_out_name,
+            decimals: token_out_decimals,
+            logo_uri: None,
+            price_usd: None,
+            market_cap: None,
+        };
+
+        // Use the builder pattern with validation
+        let builder = Self::builder()
+            .version(version)
+            .transaction_hash(transaction_hash)
+            .pool_address(pool_address)
+            .token_in(token_in)
+            .token_out(token_out)
+            .amount_in(amount_in)
+            .amount_out(amount_out)
+            .user_address(user_address);
+
+        // Log validation warnings
+        let warnings = builder.validate();
+        if !warnings.is_empty() {
+            warn!("SwapEvent from_raw_data validation warnings: {}", warnings.join(", "));
+        }
+
+        builder.build()
+    }
+
+    /// Create a SwapEvent from JSON data using builder with validation
+    pub fn from_json(json_data: &str) -> Result<Self, String> {
+        // Parse JSON data
+        let json_value: serde_json::Value = serde_json::from_str(json_data)
+            .map_err(|e| format!("Failed to parse JSON: {}", e))?;
+
+        // Extract required fields
+        let version = match json_value["version"].as_str() {
+            Some("v2") => UniswapVersion::V2,
+            Some("v3") => UniswapVersion::V3,
+            _ => return Err("Invalid or missing version".to_string()),
+        };
+
+        let transaction_hash = json_value["transaction_hash"]
+            .as_str()
+            .ok_or("Missing transaction_hash")?
+            .to_string();
+
+        let pool_address = json_value["pool_address"]
+            .as_str()
+            .ok_or("Missing pool_address")?
+            .to_string();
+
+        let user_address = json_value["user_address"]
+            .as_str()
+            .ok_or("Missing user_address")?
+            .to_string();
+
+        // Extract token information
+        let token_in = TokenInfo {
+            address: json_value["token_in"]["address"]
+                .as_str()
+                .ok_or("Missing token_in.address")?
+                .to_string(),
+            symbol: json_value["token_in"]["symbol"]
+                .as_str()
+                .ok_or("Missing token_in.symbol")?
+                .to_string(),
+            name: json_value["token_in"]["name"]
+                .as_str()
+                .ok_or("Missing token_in.name")?
+                .to_string(),
+            decimals: json_value["token_in"]["decimals"]
+                .as_u64()
+                .ok_or("Missing token_in.decimals")? as u8,
+            logo_uri: json_value["token_in"]["logo_uri"].as_str().map(|s| s.to_string()),
+            price_usd: json_value["token_in"]["price_usd"].as_f64(),
+            market_cap: json_value["token_in"]["market_cap"].as_f64(),
+        };
+
+        let token_out = TokenInfo {
+            address: json_value["token_out"]["address"]
+                .as_str()
+                .ok_or("Missing token_out.address")?
+                .to_string(),
+            symbol: json_value["token_out"]["symbol"]
+                .as_str()
+                .ok_or("Missing token_out.symbol")?
+                .to_string(),
+            name: json_value["token_out"]["name"]
+                .as_str()
+                .ok_or("Missing token_out.name")?
+                .to_string(),
+            decimals: json_value["token_out"]["decimals"]
+                .as_u64()
+                .ok_or("Missing token_out.decimals")? as u8,
+            logo_uri: json_value["token_out"]["logo_uri"].as_str().map(|s| s.to_string()),
+            price_usd: json_value["token_out"]["price_usd"].as_f64(),
+            market_cap: json_value["token_out"]["market_cap"].as_f64(),
+        };
+
+        let amount_in = json_value["amount_in"]
+            .as_str()
+            .ok_or("Missing amount_in")?
+            .to_string();
+
+        let amount_out = json_value["amount_out"]
+            .as_str()
+            .ok_or("Missing amount_out")?
+            .to_string();
+
+        // Use the builder pattern
+        let builder = Self::builder()
+            .version(version)
+            .transaction_hash(transaction_hash)
+            .pool_address(pool_address)
+            .token_in(token_in)
+            .token_out(token_out)
+            .amount_in(amount_in)
+            .amount_out(amount_out)
+            .user_address(user_address);
+
+        // Validate before building
+        let warnings = builder.validate();
+        if !warnings.is_empty() {
+            warn!("SwapEvent from_json validation warnings: {}", warnings.join(", "));
         }
 
         builder.build()
@@ -544,7 +861,6 @@ impl SwapEventBuilder {
     }
 
     /// Test the builder with sample data
-    #[cfg(test)]
     pub fn test_builder() -> Result<SwapEvent, String> {
         let token_in = TokenInfo {
             address: "0xA0b86a33E6441b8c4C3B1b1ef4F2faD6244b51a".to_string(),
@@ -579,7 +895,6 @@ impl SwapEventBuilder {
     }
 
     /// Demonstrate error handling scenarios
-    #[cfg(test)]
     pub fn demonstrate_errors() -> Vec<String> {
         let mut errors = Vec::new();
         
