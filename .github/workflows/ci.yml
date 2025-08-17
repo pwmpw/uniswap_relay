@@ -62,7 +62,7 @@ jobs:
         run: cargo test --all-features --verbose
 
       - name: Run integration tests
-        run: cargo test --test integration --verbose
+        run: cargo test --test mod --verbose
 
       - name: Check build
         run: cargo check --all-features
