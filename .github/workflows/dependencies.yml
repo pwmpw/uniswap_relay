@@ -50,6 +50,7 @@ jobs:
         run: |
           echo "Current dependency status:"
           cargo outdated || echo "No outdated dependencies found or cargo-outdated not available"
+          # Note: cargo outdated is informational only and won't fail the workflow
 
       - name: Update Cargo.lock
         run: cargo update
