@@ -1,5 +1,5 @@
 //! Integration tests for uniswap_relay
-//! 
+//!
 //! These tests verify the integration between components.
 
 pub mod working_test;
@@ -20,4 +20,4 @@ mod tests {
         // If we get here, initialization succeeded
         // No assertion needed - just reaching this point means success
     }
-} 
+}

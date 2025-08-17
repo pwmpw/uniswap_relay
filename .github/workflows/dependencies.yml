@@ -97,6 +97,14 @@ jobs:
             exit 0
           }
 
+      - name: Check dependency sorting
+        run: |
+          # Install cargo-sort if not available
+          if ! command -v cargo-sort &> /dev/null; then
+            cargo install cargo-sort
+          fi
+          cargo sort --check
+
       - name: Create pull request
         if: steps.check-updates.outputs.no_updates == 'false'
         uses: peter-evans/create-pull-request@v6

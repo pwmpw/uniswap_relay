@@ -299,7 +299,10 @@ impl SwapEvent {
         // Validate before building
         let warnings = builder.validate();
         if !warnings.is_empty() {
-            eprintln!("SwapEvent: Builder validation warnings: {}", warnings.join(", "));
+            eprintln!(
+                "SwapEvent: Builder validation warnings: {}",
+                warnings.join(", ")
+            );
         }
 
         builder.build()
@@ -512,7 +515,10 @@ impl SwapEvent {
         // Log validation warnings
         let warnings = builder.validate();
         if !warnings.is_empty() {
-            warn!("SwapEvent from_raw_data validation warnings: {}", warnings.join(", "));
+            warn!(
+                "SwapEvent from_raw_data validation warnings: {}",
+                warnings.join(", ")
+            );
         }
 
         builder.build()
@@ -521,8 +527,8 @@ impl SwapEvent {
     /// Create a SwapEvent from JSON data using builder with validation
     pub fn from_json(json_data: &str) -> Result<Self, String> {
         // Parse JSON data
-        let json_value: serde_json::Value = serde_json::from_str(json_data)
-            .map_err(|e| format!("Failed to parse JSON: {}", e))?;
+        let json_value: serde_json::Value =
+            serde_json::from_str(json_data).map_err(|e| format!("Failed to parse JSON: {}", e))?;
 
         // Extract required fields
         let version = match json_value["version"].as_str() {
@@ -563,7 +569,9 @@ impl SwapEvent {
             decimals: json_value["token_in"]["decimals"]
                 .as_u64()
                 .ok_or("Missing token_in.decimals")? as u8,
-            logo_uri: json_value["token_in"]["logo_uri"].as_str().map(|s| s.to_string()),
+            logo_uri: json_value["token_in"]["logo_uri"]
+                .as_str()
+                .map(|s| s.to_string()),
             price_usd: json_value["token_in"]["price_usd"].as_f64(),
             market_cap: json_value["token_in"]["market_cap"].as_f64(),
         };
@@ -584,7 +592,9 @@ impl SwapEvent {
             decimals: json_value["token_out"]["decimals"]
                 .as_u64()
                 .ok_or("Missing token_out.decimals")? as u8,
-            logo_uri: json_value["token_out"]["logo_uri"].as_str().map(|s| s.to_string()),
+            logo_uri: json_value["token_out"]["logo_uri"]
+                .as_str()
+                .map(|s| s.to_string()),
             price_usd: json_value["token_out"]["price_usd"].as_f64(),
             market_cap: json_value["token_out"]["market_cap"].as_f64(),
         };
@@ -613,7 +623,10 @@ impl SwapEvent {
         // Validate before building
         let warnings = builder.validate();
         if !warnings.is_empty() {
-            warn!("SwapEvent from_json validation warnings: {}", warnings.join(", "));
+            warn!(
+                "SwapEvent from_json validation warnings: {}",
+                warnings.join(", ")
+            );
         }
 
         builder.build()
@@ -687,7 +700,10 @@ impl SwapEventBuilder {
         if transaction_hash.is_empty() {
             eprintln!("SwapEventBuilder: Warning - transaction hash is empty");
         } else if transaction_hash.len() < 10 {
-            eprintln!("SwapEventBuilder: Warning - transaction hash seems too short: {}", transaction_hash);
+            eprintln!(
+                "SwapEventBuilder: Warning - transaction hash seems too short: {}",
+                transaction_hash
+            );
         }
         self.transaction_hash = Some(transaction_hash);
         self
@@ -697,7 +713,10 @@ impl SwapEventBuilder {
         if pool_address.is_empty() {
             eprintln!("SwapEventBuilder: Warning - pool address is empty");
         } else if !pool_address.starts_with("0x") {
-            eprintln!("SwapEventBuilder: Warning - pool address doesn't start with 0x: {}", pool_address);
+            eprintln!(
+                "SwapEventBuilder: Warning - pool address doesn't start with 0x: {}",
+                pool_address
+            );
         }
         self.pool_address = Some(pool_address);
         self
@@ -707,7 +726,10 @@ impl SwapEventBuilder {
         if token_in.address.is_empty() {
             eprintln!("SwapEventBuilder: Warning - token in address is empty");
         } else if !token_in.address.starts_with("0x") {
-            eprintln!("SwapEventBuilder: Warning - token in address doesn't start with 0x: {}", token_in.address);
+            eprintln!(
+                "SwapEventBuilder: Warning - token in address doesn't start with 0x: {}",
+                token_in.address
+            );
         }
         if token_in.symbol.is_empty() {
             eprintln!("SwapEventBuilder: Warning - token in symbol is empty");
@@ -720,7 +742,10 @@ impl SwapEventBuilder {
         if token_out.address.is_empty() {
             eprintln!("SwapEventBuilder: Warning - token out address is empty");
         } else if !token_out.address.starts_with("0x") {
-            eprintln!("SwapEventBuilder: Warning - token out address doesn't start with 0x: {}", token_out.address);
+            eprintln!(
+                "SwapEventBuilder: Warning - token out address doesn't start with 0x: {}",
+                token_out.address
+            );
         }
         if token_out.symbol.is_empty() {
             eprintln!("SwapEventBuilder: Warning - token out symbol is empty");
@@ -733,7 +758,10 @@ impl SwapEventBuilder {
         if amount_in.is_empty() {
             eprintln!("SwapEventBuilder: Warning - amount in is empty");
         } else if !amount_in.chars().all(|c| c.is_ascii_digit() || c == '.') {
-            eprintln!("SwapEventBuilder: Warning - amount in is not numeric: {}", amount_in);
+            eprintln!(
+                "SwapEventBuilder: Warning - amount in is not numeric: {}",
+                amount_in
+            );
         }
         self.amount_in = Some(amount_in);
         self
@@ -743,7 +771,10 @@ impl SwapEventBuilder {
         if amount_out.is_empty() {
             eprintln!("SwapEventBuilder: Warning - amount out is empty");
         } else if !amount_out.chars().all(|c| c.is_ascii_digit() || c == '.') {
-            eprintln!("SwapEventBuilder: Warning - amount out is not numeric: {}", amount_out);
+            eprintln!(
+                "SwapEventBuilder: Warning - amount out is not numeric: {}",
+                amount_out
+            );
         }
         self.amount_out = Some(amount_out);
         self
@@ -753,7 +784,10 @@ impl SwapEventBuilder {
         if user_address.is_empty() {
             eprintln!("SwapEventBuilder: Warning - user address is empty");
         } else if !user_address.starts_with("0x") {
-            eprintln!("SwapEventBuilder: Warning - user address doesn't start with 0x: {}", user_address);
+            eprintln!(
+                "SwapEventBuilder: Warning - user address doesn't start with 0x: {}",
+                user_address
+            );
         }
         self.user_address = Some(user_address);
         self
@@ -762,12 +796,12 @@ impl SwapEventBuilder {
     /// Validate the current builder state and return any warnings
     pub fn validate(&self) -> Vec<String> {
         let mut warnings = Vec::new();
-        
+
         // Check for missing fields
         if self.version.is_none() {
             warnings.push("Version is not set".to_string());
         }
-        
+
         if self.transaction_hash.is_none() {
             warnings.push("Transaction hash is not set".to_string());
         } else if let Some(ref hash) = self.transaction_hash {
@@ -775,7 +809,7 @@ impl SwapEventBuilder {
                 warnings.push("Transaction hash is empty".to_string());
             }
         }
-        
+
         if self.pool_address.is_none() {
             warnings.push("Pool address is not set".to_string());
         } else if let Some(ref addr) = self.pool_address {
@@ -785,7 +819,7 @@ impl SwapEventBuilder {
                 warnings.push("Pool address doesn't start with 0x".to_string());
             }
         }
-        
+
         if self.token_in.is_none() {
             warnings.push("Token in is not set".to_string());
         } else if let Some(ref token) = self.token_in {
@@ -798,7 +832,7 @@ impl SwapEventBuilder {
                 warnings.push("Token in symbol is empty".to_string());
             }
         }
-        
+
         if self.token_out.is_none() {
             warnings.push("Token out is not set".to_string());
         } else if let Some(ref token) = self.token_out {
@@ -811,7 +845,7 @@ impl SwapEventBuilder {
                 warnings.push("Token out symbol is empty".to_string());
             }
         }
-        
+
         if self.amount_in.is_none() {
             warnings.push("Amount in is not set".to_string());
         } else if let Some(ref amount) = self.amount_in {
@@ -821,7 +855,7 @@ impl SwapEventBuilder {
                 warnings.push("Amount in is not numeric".to_string());
             }
         }
-        
+
         if self.amount_out.is_none() {
             warnings.push("Amount out is not set".to_string());
         } else if let Some(ref amount) = self.amount_out {
@@ -831,7 +865,7 @@ impl SwapEventBuilder {
                 warnings.push("Amount out is not numeric".to_string());
             }
         }
-        
+
         if self.user_address.is_none() {
             warnings.push("User address is not set".to_string());
         } else if let Some(ref addr) = self.user_address {
@@ -841,7 +875,7 @@ impl SwapEventBuilder {
                 warnings.push("User address doesn't start with 0x".to_string());
             }
         }
-        
+
         warnings
     }
 
@@ -856,7 +890,11 @@ impl SwapEventBuilder {
         if warnings.is_empty() {
             "SwapEventBuilder: All fields are set and valid".to_string()
         } else {
-            format!("SwapEventBuilder: {} warnings - {}", warnings.len(), warnings.join(", "))
+            format!(
+                "SwapEventBuilder: {} warnings - {}",
+                warnings.len(),
+                warnings.join(", ")
+            )
         }
     }
 
@@ -884,7 +922,9 @@ impl SwapEventBuilder {
 
         SwapEvent::builder()
             .version(UniswapVersion::V3)
-            .transaction_hash("0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef".to_string())
+            .transaction_hash(
+                "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef".to_string(),
+            )
             .pool_address("0x8ad599c3A0ff1De082011EFDDc58f1908eb6e6D8".to_string())
             .token_in(token_in)
             .token_out(token_out)
@@ -897,36 +937,40 @@ impl SwapEventBuilder {
     /// Demonstrate error handling scenarios
     pub fn demonstrate_errors() -> Vec<String> {
         let mut errors = Vec::new();
-        
+
         // Test missing version
         let builder = SwapEvent::builder()
-            .transaction_hash("0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef".to_string())
+            .transaction_hash(
+                "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef".to_string(),
+            )
             .pool_address("0x8ad599c3A0ff1De082011EFDDc58f1908eb6e6D8".to_string());
-        
+
         if let Err(e) = builder.build() {
             errors.push(format!("Missing version error: {}", e));
         }
-        
+
         // Test invalid transaction hash
         let builder = SwapEvent::builder()
             .version(UniswapVersion::V2)
             .transaction_hash("".to_string()) // Empty hash
             .pool_address("0x8ad599c3A0ff1De082011EFDDc58f1908eb6e6D8".to_string());
-        
+
         if let Err(e) = builder.build() {
             errors.push(format!("Invalid transaction hash error: {}", e));
         }
-        
+
         // Test invalid pool address
         let builder = SwapEvent::builder()
             .version(UniswapVersion::V2)
-            .transaction_hash("0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef".to_string())
+            .transaction_hash(
+                "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef".to_string(),
+            )
             .pool_address("invalid_address".to_string()); // Invalid address
-        
+
         if let Err(e) = builder.build() {
             errors.push(format!("Invalid pool address error: {}", e));
         }
-        
+
         errors
     }
 
@@ -936,37 +980,37 @@ impl SwapEventBuilder {
             eprintln!("SwapEventBuilder: Version field is missing");
             "Version is required for SwapEvent"
         })?;
-        
+
         let transaction_hash = self.transaction_hash.ok_or_else(|| {
             eprintln!("SwapEventBuilder: Transaction hash field is missing");
             "Transaction hash is required for SwapEvent"
         })?;
-        
+
         let pool_address = self.pool_address.ok_or_else(|| {
             eprintln!("SwapEventBuilder: Pool address field is missing");
             "Pool address is required for SwapEvent"
         })?;
-        
+
         let token_in = self.token_in.ok_or_else(|| {
             eprintln!("SwapEventBuilder: Token in field is missing");
             "Token in is required for SwapEvent"
         })?;
-        
+
         let token_out = self.token_out.ok_or_else(|| {
             eprintln!("SwapEventBuilder: Token out field is missing");
             "Token out is required for SwapEvent"
         })?;
-        
+
         let amount_in = self.amount_in.ok_or_else(|| {
             eprintln!("SwapEventBuilder: Amount in field is missing");
             "Amount in is required for SwapEvent"
         })?;
-        
+
         let amount_out = self.amount_out.ok_or_else(|| {
             eprintln!("SwapEventBuilder: Amount out field is missing");
             "Amount out is required for SwapEvent"
         })?;
-        
+
         let user_address = self.user_address.ok_or_else(|| {
             eprintln!("SwapEventBuilder: User address field is missing");
             "User address is required for SwapEvent"
@@ -976,15 +1020,15 @@ impl SwapEventBuilder {
         if transaction_hash.is_empty() {
             return Err("Transaction hash cannot be empty".to_string());
         }
-        
+
         if pool_address.is_empty() {
             return Err("Pool address cannot be empty".to_string());
         }
-        
+
         if amount_in.is_empty() || amount_out.is_empty() {
             return Err("Amount fields cannot be empty".to_string());
         }
-        
+
         if user_address.is_empty() {
             return Err("User address cannot be empty".to_string());
         }
@@ -998,13 +1042,16 @@ impl SwapEventBuilder {
         if !amount_in.chars().all(|c| c.is_ascii_digit() || c == '.') {
             return Err("Amount in must be a valid numeric value".to_string());
         }
-        
+
         if !amount_out.chars().all(|c| c.is_ascii_digit() || c == '.') {
             return Err("Amount out must be a valid numeric value".to_string());
         }
 
-        eprintln!("SwapEventBuilder: Successfully built SwapEvent for transaction {}", transaction_hash);
-        
+        eprintln!(
+            "SwapEventBuilder: Successfully built SwapEvent for transaction {}",
+            transaction_hash
+        );
+
         Ok(SwapEvent {
             id: format!("{}_{}", version, transaction_hash),
             version,

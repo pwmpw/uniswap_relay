@@ -60,6 +60,8 @@ help: ## Show this help message
 	@echo "  make build ENV=production"
 	@echo "  make test VERSION=v1.0.0"
 	@echo "  make docker-build DOCKER_TAG=latest"
+	@echo "  make sort        # Sort dependencies in Cargo.toml"
+	@echo "  make sort-check  # Check if dependencies are sorted"
 	@echo ""
 	@echo "CI Pipeline:"
 	@echo "  make ci              # Run CI pipeline for current platform"
@@ -230,6 +232,26 @@ fmt-check: ## Check code formatting
 	@echo "🎨 Checking code formatting..."
 	$(CARGO) fmt $(CARGO_FMT_FLAGS) $(CARGO_FLAGS)
 	@echo "✅ Code formatting check passed!"
+
+.PHONY: sort-check
+sort-check: ## Check dependency sorting
+	@echo "📋 Checking dependency sorting..."
+	@if ! command -v cargo-sort >/dev/null 2>&1; then \
+		echo "Installing cargo-sort..."; \
+		cargo install cargo-sort; \
+	fi
+	cargo sort --check
+	@echo "✅ Dependency sorting check passed!"
+
+.PHONY: sort
+sort: ## Sort dependencies in Cargo.toml
+	@echo "📋 Sorting dependencies..."
+	@if ! command -v cargo-sort >/dev/null 2>&1; then \
+		echo "Installing cargo-sort..."; \
+		cargo install cargo-sort; \
+	fi
+	cargo sort
+	@echo "✅ Dependencies sorted!"
 
 .PHONY: clippy
 clippy: ## Run clippy linter (strict)
@@ -491,6 +513,8 @@ ci: ## Run CI pipeline locally
 	@$(MAKE) clean
 	@$(MAKE) check-current
 	@$(MAKE) build
+	@$(MAKE) fmt-check
+	@$(MAKE) sort-check
 	@$(MAKE) clippy
 	@$(MAKE) test
 	@$(MAKE) audit

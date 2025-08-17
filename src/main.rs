@@ -35,7 +35,7 @@ async fn main() -> Result<()> {
         error!("Basic configuration validation failed: {}", e);
         std::process::exit(1);
     }
-    
+
     if let Err(e) = config.validate_comprehensive() {
         error!("Comprehensive configuration validation failed: {}", e);
         std::process::exit(1);
@@ -59,7 +59,7 @@ async fn main() -> Result<()> {
 
     // Initialize metrics collector
     let metrics_collector = MetricsCollector::new(config.clone());
-    
+
     // Start health checks if enabled
     if config.monitoring.enable_health_checks {
         let health_collector = metrics_collector.clone();
@@ -80,7 +80,14 @@ async fn main() -> Result<()> {
     swap_collector.start_collecting().await?;
 
     info!("Uniswap Relay DApp started successfully");
-    info!("Environment: {}", if config.is_production() { "PRODUCTION" } else { "DEVELOPMENT" });
+    info!(
+        "Environment: {}",
+        if config.is_production() {
+            "PRODUCTION"
+        } else {
+            "DEVELOPMENT"
+        }
+    );
     info!("Configuration: {}", swap_collector.get_config_summary());
 
     // Wait for shutdown signal
@@ -113,9 +120,10 @@ fn init_logging(config: &AppConfig) -> Result<()> {
         .with(formatting_layer)
         .init();
 
-    info!("Logging initialized with level: {}, structured: {}", 
-          config.application.log_level, 
-          config.monitoring.enable_structured_logging);
+    info!(
+        "Logging initialized with level: {}, structured: {}",
+        config.application.log_level, config.monitoring.enable_structured_logging
+    );
     Ok(())
 }
 

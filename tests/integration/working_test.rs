@@ -9,7 +9,9 @@ use uniswap_relay::{
 fn test_swap_event_builder() -> Result<()> {
     let event = SwapEventBuilder::default()
         .version(UniswapVersion::V2)
-        .transaction_hash("0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef".to_string())
+        .transaction_hash(
+            "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef".to_string(),
+        )
         .pool_address("0x8ad599c3A0ff1De082011EFDDc58f1908eb6e6D8".to_string())
         .token_in(TokenInfo {
             address: "0xA0b86a33E6441b8c4C3B1b1ef4F2faD6244b51a".to_string(),
@@ -36,7 +38,10 @@ fn test_swap_event_builder() -> Result<()> {
         .map_err(|e| uniswap_relay::error::DAppError::Internal(format!("Builder failed: {}", e)))?;
 
     assert_eq!(event.version, UniswapVersion::V2);
-    assert_eq!(event.pool_address, "0x8ad599c3A0ff1De082011EFDDc58f1908eb6e6D8");
+    assert_eq!(
+        event.pool_address,
+        "0x8ad599c3A0ff1De082011EFDDc58f1908eb6e6D8"
+    );
     assert_eq!(event.token_in.symbol, "USDC");
     assert_eq!(event.token_out.symbol, "WETH");
 
@@ -47,15 +52,15 @@ fn test_swap_event_builder() -> Result<()> {
 #[test]
 fn test_config_validation() -> Result<()> {
     let config = AppConfig::default();
-    
+
     // Test basic validation
     let result = config.validate();
     assert!(result.is_ok());
-    
+
     // Test comprehensive validation
     let result = config.validate_comprehensive();
     assert!(result.is_ok());
-    
+
     Ok(())
 }
 
@@ -63,7 +68,7 @@ fn test_config_validation() -> Result<()> {
 #[test]
 fn test_environment_detection() {
     let config = AppConfig::default();
-    
+
     // Test environment methods
     assert!(!config.is_production());
     assert!(config.is_development());
@@ -73,22 +78,22 @@ fn test_environment_detection() {
 #[test]
 fn test_error_types() {
     use uniswap_relay::error::{DAppError, EthereumError, SolanaError};
-    
+
     // Test Ethereum error creation
     let eth_error = EthereumError::EventParsing("test error".to_string());
     let dapp_error = DAppError::Ethereum(eth_error);
-    
+
     match dapp_error {
         DAppError::Ethereum(EthereumError::EventParsing(msg)) => {
             assert_eq!(msg, "test error");
         }
         _ => panic!("Expected Ethereum EventParsing error"),
     }
-    
+
     // Test Solana error creation
     let sol_error = SolanaError::Instruction("test instruction error".to_string());
     let dapp_error = DAppError::Solana(sol_error);
-    
+
     match dapp_error {
         DAppError::Solana(SolanaError::Instruction(msg)) => {
             assert_eq!(msg, "test instruction error");
@@ -102,7 +107,9 @@ fn test_error_types() {
 fn test_swap_event_serialization() -> Result<()> {
     let event = SwapEventBuilder::default()
         .version(UniswapVersion::V3)
-        .transaction_hash("0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890".to_string())
+        .transaction_hash(
+            "0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890".to_string(),
+        )
         .pool_address("0x8ad599c3A0ff1De082011EFDDc58f1908eb6e6D8".to_string())
         .token_in(TokenInfo {
             address: "0xA0b86a33E6441b8c4C3B1b1ef4F2faD6244b51a".to_string(),
@@ -133,12 +140,12 @@ fn test_swap_event_serialization() -> Result<()> {
     assert!(!json.is_empty());
     assert!(json.contains("USDC"));
     assert!(json.contains("WETH"));
-    
+
     // Test JSON deserialization
     let deserialized: SwapEvent = serde_json::from_str(&json)?;
     assert_eq!(deserialized.id, event.id);
     assert_eq!(deserialized.version, event.version);
-    
+
     Ok(())
 }
 
@@ -146,13 +153,13 @@ fn test_swap_event_serialization() -> Result<()> {
 #[test]
 fn test_config_scenarios() -> Result<()> {
     let mut config = AppConfig::default();
-    
+
     // Test rate limiting configuration
     config.rate_limiting.max_subgraph_requests_per_second = 100;
     config.rate_limiting.burst_size = 200;
     assert_eq!(config.rate_limiting.max_subgraph_requests_per_second, 100);
     assert_eq!(config.rate_limiting.burst_size, 200);
-    
+
     // Test retry configuration
     config.retry.max_attempts = 5;
     config.retry.initial_delay_ms = 1000;
@@ -162,7 +169,7 @@ fn test_config_scenarios() -> Result<()> {
     assert_eq!(config.retry.initial_delay_ms, 1000);
     assert_eq!(config.retry.max_delay_ms, 30000);
     assert_eq!(config.retry.backoff_multiplier, 2.5);
-    
+
     // Test monitoring configuration
     config.monitoring.enable_metrics = true;
     config.monitoring.enable_health_checks = true;
@@ -170,6 +177,6 @@ fn test_config_scenarios() -> Result<()> {
     assert!(config.monitoring.enable_metrics);
     assert!(config.monitoring.enable_health_checks);
     assert_eq!(config.monitoring.metrics_interval_seconds, 30);
-    
+
     Ok(())
-} 
+}

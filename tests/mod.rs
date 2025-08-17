@@ -1,5 +1,5 @@
 //! Test modules for uniswap_relay
-//! 
+//!
 //! This module contains all test types and utilities.
 
 pub mod integration;
@@ -13,4 +13,4 @@ mod tests {
         integration::init();
         // No assertion needed - just reaching this point means success
     }
-} 
+}

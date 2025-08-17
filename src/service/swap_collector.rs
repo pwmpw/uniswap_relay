@@ -1,6 +1,9 @@
 use crate::config::AppConfig;
 use crate::error::Result;
-use crate::model::{PoolInfo, SwapEvent, SwapEventBuilder, TokenInfo, UniswapVersion, UniswapV2SwapEvent, GraphQLPair, GraphQLToken, UniswapV3SwapEvent, GraphQLV3Pool};
+use crate::model::{
+    GraphQLPair, GraphQLToken, GraphQLV3Pool, PoolInfo, SwapEvent, SwapEventBuilder, TokenInfo,
+    UniswapV2SwapEvent, UniswapV3SwapEvent, UniswapVersion,
+};
 use crate::redis::RedisPublisher;
 use crate::subgraph::SubgraphClient;
 use crate::telemetry::MetricsCollector;
@@ -92,38 +95,48 @@ impl SwapEventCollector {
         let subgraph_client = self.subgraph_client.clone();
         let redis_publisher = self.redis_publisher.clone();
         let metrics_collector = self.metrics_collector.clone();
-        
+
         // Use rate limiting config
         let interval_duration = Duration::from_secs(
-            config.subgraph.polling_interval_seconds.max(1) // Ensure minimum 1 second
+            config.subgraph.polling_interval_seconds.max(1), // Ensure minimum 1 second
         );
         let mut interval_timer = interval(interval_duration);
-        
+
         // Log rate limiting configuration
         if config.is_production() {
-            info!("Production V2 collection: {} req/s, burst: {}, window: {}s", 
-                  config.rate_limiting.max_subgraph_requests_per_second,
-                  config.rate_limiting.burst_size,
-                  config.rate_limiting.window_size_seconds);
+            info!(
+                "Production V2 collection: {} req/s, burst: {}, window: {}s",
+                config.rate_limiting.max_subgraph_requests_per_second,
+                config.rate_limiting.burst_size,
+                config.rate_limiting.window_size_seconds
+            );
         } else if config.is_development() {
-            debug!("Development V2 collection: {} req/s, burst: {}, window: {}s", 
-                   config.rate_limiting.max_subgraph_requests_per_second,
-                   config.rate_limiting.burst_size,
-                   config.rate_limiting.window_size_seconds);
+            debug!(
+                "Development V2 collection: {} req/s, burst: {}, window: {}s",
+                config.rate_limiting.max_subgraph_requests_per_second,
+                config.rate_limiting.burst_size,
+                config.rate_limiting.window_size_seconds
+            );
         } else {
-            info!("V2 collection configured with {} requests per second, burst size: {}, window: {}s", 
-                  config.rate_limiting.max_subgraph_requests_per_second,
-                  config.rate_limiting.burst_size,
-                  config.rate_limiting.window_size_seconds);
+            info!(
+                "V2 collection configured with {} requests per second, burst size: {}, window: {}s",
+                config.rate_limiting.max_subgraph_requests_per_second,
+                config.rate_limiting.burst_size,
+                config.rate_limiting.window_size_seconds
+            );
         }
 
         tokio::spawn(async move {
             loop {
                 interval_timer.tick().await;
 
-                if let Err(e) =
-                    Self::collect_v2_events_with_retry(&subgraph_client, &redis_publisher, &metrics_collector, &config)
-                        .await
+                if let Err(e) = Self::collect_v2_events_with_retry(
+                    &subgraph_client,
+                    &redis_publisher,
+                    &metrics_collector,
+                    &config,
+                )
+                .await
                 {
                     error!("Error collecting V2 events after retries: {}", e);
                     metrics_collector.record_error();
@@ -140,26 +153,30 @@ impl SwapEventCollector {
         let subgraph_client = self.subgraph_client.clone();
         let redis_publisher = self.redis_publisher.clone();
         let metrics_collector = self.metrics_collector.clone();
-        
+
         // Use rate limiting config
         let interval_duration = Duration::from_secs(
-            config.subgraph.polling_interval_seconds.max(1) // Ensure minimum 1 second
+            config.subgraph.polling_interval_seconds.max(1), // Ensure minimum 1 second
         );
         let mut interval_timer = interval(interval_duration);
-        
+
         // Log retry configuration
         if config.is_production() {
-            info!("Production V3 collection: {} attempts, delay: {}ms, max: {}ms, backoff: {}x", 
-                  config.retry.max_attempts,
-                  config.retry.initial_delay_ms,
-                  config.retry.max_delay_ms,
-                  config.retry.backoff_multiplier);
+            info!(
+                "Production V3 collection: {} attempts, delay: {}ms, max: {}ms, backoff: {}x",
+                config.retry.max_attempts,
+                config.retry.initial_delay_ms,
+                config.retry.max_delay_ms,
+                config.retry.backoff_multiplier
+            );
         } else if config.is_development() {
-            debug!("Development V3 collection: {} attempts, delay: {}ms, max: {}ms, backoff: {}x", 
-                   config.retry.max_attempts,
-                   config.retry.initial_delay_ms,
-                   config.retry.max_delay_ms,
-                   config.retry.backoff_multiplier);
+            debug!(
+                "Development V3 collection: {} attempts, delay: {}ms, max: {}ms, backoff: {}x",
+                config.retry.max_attempts,
+                config.retry.initial_delay_ms,
+                config.retry.max_delay_ms,
+                config.retry.backoff_multiplier
+            );
         } else {
             info!("V3 collection configured with max attempts: {}, initial delay: {}ms, max delay: {}ms, backoff: {}x", 
                   config.retry.max_attempts,
@@ -172,9 +189,13 @@ impl SwapEventCollector {
             loop {
                 interval_timer.tick().await;
 
-                if let Err(e) =
-                    Self::collect_v3_events_with_retry(&subgraph_client, &redis_publisher, &metrics_collector, &config)
-                        .await
+                if let Err(e) = Self::collect_v3_events_with_retry(
+                    &subgraph_client,
+                    &redis_publisher,
+                    &metrics_collector,
+                    &config,
+                )
+                .await
                 {
                     error!("Error collecting V3 events after retries: {}", e);
                     metrics_collector.record_error();
@@ -196,19 +217,23 @@ impl SwapEventCollector {
         let mut delay = config.retry.initial_delay_ms;
 
         loop {
-            match Self::collect_v2_events(subgraph_client, redis_publisher, metrics_collector).await {
+            match Self::collect_v2_events(subgraph_client, redis_publisher, metrics_collector).await
+            {
                 Ok(()) => return Ok(()),
                 Err(e) => {
                     attempts += 1;
                     if attempts >= config.retry.max_attempts {
                         return Err(e);
                     }
-                    
+
                     // Apply exponential backoff with max delay limit
                     delay = (delay as f64 * config.retry.backoff_multiplier) as u64;
                     delay = delay.min(config.retry.max_delay_ms);
-                    
-                    warn!("V2 collection attempt {} failed, retrying in {}ms: {}", attempts, delay, e);
+
+                    warn!(
+                        "V2 collection attempt {} failed, retrying in {}ms: {}",
+                        attempts, delay, e
+                    );
                     tokio::time::sleep(tokio::time::Duration::from_millis(delay)).await;
                 }
             }
@@ -269,15 +294,27 @@ impl SwapEventCollector {
             .await
             .map_err(|e| {
                 // Check if this looks like a DNS resolution error
-                if e.to_string().contains("dns") || e.to_string().contains("resolve") || e.to_string().contains("lookup") {
-                    crate::error::DAppError::Network(crate::error::NetworkError::dns_resolution_error(format!("DNS resolution error in V2 query: {}", e)))
+                if e.to_string().contains("dns")
+                    || e.to_string().contains("resolve")
+                    || e.to_string().contains("lookup")
+                {
+                    crate::error::DAppError::Network(
+                        crate::error::NetworkError::dns_resolution_error(format!(
+                            "DNS resolution error in V2 query: {}",
+                            e
+                        )),
+                    )
                 }
                 // Check if this looks like a Solana program error
                 else if e.to_string().contains("solana") && e.to_string().contains("program") {
-                    crate::error::DAppError::Solana(crate::error::SolanaError::program_error(format!("Solana program error in V2 query: {}", e)))
+                    crate::error::DAppError::Solana(crate::error::SolanaError::program_error(
+                        format!("Solana program error in V2 query: {}", e),
+                    ))
                 } else {
                     // Use Transaction error for query failures that might be transaction-related
-                    crate::error::DAppError::Ethereum(crate::error::EthereumError::Transaction(format!("V2 subgraph query failed: {}", e)))
+                    crate::error::DAppError::Ethereum(crate::error::EthereumError::Transaction(
+                        format!("V2 subgraph query failed: {}", e),
+                    ))
                 }
             })?;
 
@@ -291,7 +328,10 @@ impl SwapEventCollector {
                             Ok(swap_event) => events.push(swap_event),
                             Err(e) => {
                                 // Use EventParsing error for parsing failures
-                                let eth_error = crate::error::EthereumError::EventParsing(format!("Failed to parse V2 swap event: {}", e));
+                                let eth_error = crate::error::EthereumError::EventParsing(format!(
+                                    "Failed to parse V2 swap event: {}",
+                                    e
+                                ));
                                 error!("{}", eth_error);
                                 metrics_collector.record_error();
                             }
@@ -325,19 +365,23 @@ impl SwapEventCollector {
         let mut delay = config.retry.initial_delay_ms;
 
         loop {
-            match Self::collect_v3_events(subgraph_client, redis_publisher, metrics_collector).await {
+            match Self::collect_v3_events(subgraph_client, redis_publisher, metrics_collector).await
+            {
                 Ok(()) => return Ok(()),
                 Err(e) => {
                     attempts += 1;
                     if attempts >= config.retry.max_attempts {
                         return Err(e);
                     }
-                    
+
                     // Apply exponential backoff with max delay limit
                     delay = (delay as f64 * config.retry.backoff_multiplier) as u64;
                     delay = delay.min(config.retry.max_delay_ms);
-                    
-                    warn!("V3 collection attempt {} failed, retrying in {}ms: {}", attempts, delay, e);
+
+                    warn!(
+                        "V3 collection attempt {} failed, retrying in {}ms: {}",
+                        attempts, delay, e
+                    );
                     tokio::time::sleep(tokio::time::Duration::from_millis(delay)).await;
                 }
             }
@@ -403,15 +447,28 @@ impl SwapEventCollector {
             .await
             .map_err(|e| {
                 // Check if this looks like a DNS resolution error
-                if e.to_string().contains("dns") || e.to_string().contains("resolve") || e.to_string().contains("lookup") {
-                    crate::error::DAppError::Network(crate::error::NetworkError::dns_resolution_error(format!("DNS resolution error in V3 query: {}", e)))
+                if e.to_string().contains("dns")
+                    || e.to_string().contains("resolve")
+                    || e.to_string().contains("lookup")
+                {
+                    crate::error::DAppError::Network(
+                        crate::error::NetworkError::dns_resolution_error(format!(
+                            "DNS resolution error in V3 query: {}",
+                            e
+                        )),
+                    )
                 }
                 // Check if this looks like a Solana transaction error
-                else if e.to_string().contains("solana") && e.to_string().contains("transaction") {
-                    crate::error::DAppError::Solana(crate::error::SolanaError::transaction_error(format!("Solana transaction error in V3 query: {}", e)))
+                else if e.to_string().contains("solana") && e.to_string().contains("transaction")
+                {
+                    crate::error::DAppError::Solana(crate::error::SolanaError::transaction_error(
+                        format!("Solana transaction error in V3 query: {}", e),
+                    ))
                 } else {
                     // Use Transaction error for query failures that might be transaction-related
-                    crate::error::DAppError::Ethereum(crate::error::EthereumError::Transaction(format!("V3 subgraph query failed: {}", e)))
+                    crate::error::DAppError::Ethereum(crate::error::EthereumError::Transaction(
+                        format!("V3 subgraph query failed: {}", e),
+                    ))
                 }
             })?;
 
@@ -425,7 +482,10 @@ impl SwapEventCollector {
                             Ok(swap_event) => events.push(swap_event),
                             Err(e) => {
                                 // Use EventParsing error for parsing failures
-                                let eth_error = crate::error::EthereumError::EventParsing(format!("Failed to parse V3 swap event: {}", e));
+                                let eth_error = crate::error::EthereumError::EventParsing(format!(
+                                    "Failed to parse V3 swap event: {}",
+                                    e
+                                ));
                                 error!("{}", eth_error);
                                 metrics_collector.record_error();
                             }
@@ -453,12 +513,14 @@ impl SwapEventCollector {
         // Check for Solana-style instruction data that might be mixed in
         if let Some(instruction_data) = swap_data.get("instruction") {
             if instruction_data.as_str().unwrap_or("").contains("solana") {
-                return Err(crate::error::DAppError::Solana(crate::error::SolanaError::instruction_error(
-                    "Solana instruction data found in Ethereum V2 swap event".to_string()
-                )));
+                return Err(crate::error::DAppError::Solana(
+                    crate::error::SolanaError::instruction_error(
+                        "Solana instruction data found in Ethereum V2 swap event".to_string(),
+                    ),
+                ));
             }
         }
-        
+
         let pair = swap_data
             .get("pair")
             .ok_or_else(|| crate::error::DAppError::Internal("Missing pair data".to_string()))?;
@@ -466,14 +528,16 @@ impl SwapEventCollector {
         let token0 = pair
             .get("token0")
             .ok_or_else(|| crate::error::DAppError::Internal("Missing token0 data".to_string()))?;
-            
+
         // Check for Solana-style public keys that might be mixed in
         if let Some(token_id) = token0.get("id") {
             if let Some(id_str) = token_id.as_str() {
                 if id_str.len() == 44 && id_str.chars().all(|c| c.is_alphanumeric() || c == '_') {
-                    return Err(crate::error::DAppError::Solana(crate::error::SolanaError::invalid_public_key(
-                        "Solana-style public key found in Ethereum token0".to_string()
-                    )));
+                    return Err(crate::error::DAppError::Solana(
+                        crate::error::SolanaError::invalid_public_key(
+                            "Solana-style public key found in Ethereum token0".to_string(),
+                        ),
+                    ));
                 }
             }
         }
@@ -481,14 +545,16 @@ impl SwapEventCollector {
         let token1 = pair
             .get("token1")
             .ok_or_else(|| crate::error::DAppError::Internal("Missing token1 data".to_string()))?;
-            
+
         // Check for Solana-style public keys that might be mixed in
         if let Some(token_id) = token1.get("id") {
             if let Some(id_str) = token_id.as_str() {
                 if id_str.len() == 44 && id_str.chars().all(|c| c.is_alphanumeric() || c == '_') {
-                    return Err(crate::error::DAppError::Solana(crate::error::SolanaError::invalid_public_key(
-                        "Solana-style public key found in Ethereum token1".to_string()
-                    )));
+                    return Err(crate::error::DAppError::Solana(
+                        crate::error::SolanaError::invalid_public_key(
+                            "Solana-style public key found in Ethereum token1".to_string(),
+                        ),
+                    ));
                 }
             }
         }
@@ -564,8 +630,6 @@ impl SwapEventCollector {
             .unwrap_or("")
             .to_string();
 
-
-
         // Use the builder pattern for better validation and error handling
         let mut swap_event = SwapEvent::builder()
             .version(UniswapVersion::V2)
@@ -574,7 +638,7 @@ impl SwapEventCollector {
                     .get("id")
                     .and_then(|v| v.as_str())
                     .unwrap_or("")
-                    .to_string()
+                    .to_string(),
             )
             .pool_address(pool_address)
             .token_in(token_in)
@@ -601,12 +665,14 @@ impl SwapEventCollector {
         // Check for Solana-style instruction data that might be mixed in
         if let Some(instruction_data) = swap_data.get("instruction") {
             if instruction_data.as_str().unwrap_or("").contains("solana") {
-                return Err(crate::error::DAppError::Solana(crate::error::SolanaError::instruction_error(
-                    "Solana instruction data found in Ethereum V3 swap event".to_string()
-                )));
+                return Err(crate::error::DAppError::Solana(
+                    crate::error::SolanaError::instruction_error(
+                        "Solana instruction data found in Ethereum V3 swap event".to_string(),
+                    ),
+                ));
             }
         }
-        
+
         let pool = swap_data
             .get("pool")
             .ok_or_else(|| crate::error::DAppError::Internal("Missing pool data".to_string()))?;
@@ -698,7 +764,7 @@ impl SwapEventCollector {
                     .get("id")
                     .and_then(|v| v.as_str())
                     .unwrap_or("")
-                    .to_string()
+                    .to_string(),
             )
             .pool_address(pool_address)
             .token_in(token_in)
@@ -790,7 +856,10 @@ impl SwapEventCollector {
             }
             Err(e) => {
                 error!("Failed to create JSON event: {}", e);
-                Err(crate::error::DAppError::Internal(format!("JSON event creation failed: {}", e)))
+                Err(crate::error::DAppError::Internal(format!(
+                    "JSON event creation failed: {}",
+                    e
+                )))
             }
         }
     }
@@ -819,7 +888,10 @@ impl SwapEventCollector {
             }
             Err(e) => {
                 error!("Failed to create raw data event: {}", e);
-                Err(crate::error::DAppError::Internal(format!("Raw data event creation failed: {}", e)))
+                Err(crate::error::DAppError::Internal(format!(
+                    "Raw data event creation failed: {}",
+                    e
+                )))
             }
         }
     }
@@ -857,12 +929,18 @@ impl SwapEventCollector {
             "0x742d35Cc6634C0532925a3b8D4C9db96C4b4d8b6".to_string(),
         ) {
             Ok(event) => {
-                info!("Create with builder event created successfully: {}", event.id);
+                info!(
+                    "Create with builder event created successfully: {}",
+                    event.id
+                );
                 Ok(())
             }
             Err(e) => {
                 error!("Failed to create event with builder: {}", e);
-                Err(crate::error::DAppError::Internal(format!("Create with builder failed: {}", e)))
+                Err(crate::error::DAppError::Internal(format!(
+                    "Create with builder failed: {}",
+                    e
+                )))
             }
         }
     }
@@ -951,7 +1029,11 @@ impl SwapEventCollector {
             amount_usd: None,
         };
 
-        if let Ok(event) = self.create_event_from_v2_subgraph(&v2_event, "0x8ad599c3A0ff1De082011EFDDc58f1908eb6e6D8".to_string(), "0x742d35Cc6634C0532925a3b8D4C9db96C4b4d8b6".to_string()) {
+        if let Ok(event) = self.create_event_from_v2_subgraph(
+            &v2_event,
+            "0x8ad599c3A0ff1De082011EFDDc58f1908eb6e6D8".to_string(),
+            "0x742d35Cc6634C0532925a3b8D4C9db96C4b4d8b6".to_string(),
+        ) {
             info!("V2 subgraph event created successfully: {}", event.id);
         }
 
@@ -1001,7 +1083,11 @@ impl SwapEventCollector {
             tick: 0,
         };
 
-        if let Ok(event) = self.create_event_from_v3_subgraph(&v3_event, "0x8ad599c3A0ff1De082011EFDDc58f1908eb6e6D8".to_string(), "0x742d35Cc6634C0532925a3b8D4C9db96C4b4d8b6".to_string()) {
+        if let Ok(event) = self.create_event_from_v3_subgraph(
+            &v3_event,
+            "0x8ad599c3A0ff1De082011EFDDc58f1908eb6e6D8".to_string(),
+            "0x742d35Cc6634C0532925a3b8D4C9db96C4b4d8b6".to_string(),
+        ) {
             info!("V3 subgraph event created successfully: {}", event.id);
         }
 
@@ -1024,32 +1110,34 @@ impl SwapEventCollector {
         let redis_healthy = self.redis_publisher.test_connection().await.is_ok();
 
         // Test SwapEventBuilder validation with sample data
-        let validation_healthy = self.validate_event_data(
-            UniswapVersion::V2,
-            "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
-            "0x8ad599c3A0ff1De082011EFDDc58f1908eb6e6D8",
-            &TokenInfo {
-                address: "0xA0b86a33E6441b8c4C3B1b1ef4F2faD6244b51a".to_string(),
-                symbol: "USDC".to_string(),
-                name: "USD Coin".to_string(),
-                decimals: 6,
-                logo_uri: None,
-                price_usd: None,
-                market_cap: None,
-            },
-            &TokenInfo {
-                address: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2".to_string(),
-                symbol: "WETH".to_string(),
-                name: "Wrapped Ether".to_string(),
-                decimals: 18,
-                logo_uri: None,
-                price_usd: None,
-                market_cap: None,
-            },
-            "1000000",
-            "0.0005",
-            "0x742d35Cc6634C0532925a3b8D4C9db96C4b4d8b6",
-        ).is_ok();
+        let validation_healthy = self
+            .validate_event_data(
+                UniswapVersion::V2,
+                "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
+                "0x8ad599c3A0ff1De082011EFDDc58f1908eb6e6D8",
+                &TokenInfo {
+                    address: "0xA0b86a33E6441b8c4C3B1b1ef4F2faD6244b51a".to_string(),
+                    symbol: "USDC".to_string(),
+                    name: "USD Coin".to_string(),
+                    decimals: 6,
+                    logo_uri: None,
+                    price_usd: None,
+                    market_cap: None,
+                },
+                &TokenInfo {
+                    address: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2".to_string(),
+                    symbol: "WETH".to_string(),
+                    name: "Wrapped Ether".to_string(),
+                    decimals: 18,
+                    logo_uri: None,
+                    price_usd: None,
+                    market_cap: None,
+                },
+                "1000000",
+                "0.0005",
+                "0x742d35Cc6634C0532925a3b8D4C9db96C4b4d8b6",
+            )
+            .is_ok();
 
         Ok(subgraph_healthy && redis_healthy && validation_healthy)
     }
@@ -1130,7 +1218,10 @@ impl SwapEventCollector {
     }
 
     /// Create a SwapEvent from JSON using the from_json method
-    pub fn create_event_from_json(&self, json_data: &str) -> std::result::Result<SwapEvent, String> {
+    pub fn create_event_from_json(
+        &self,
+        json_data: &str,
+    ) -> std::result::Result<SwapEvent, String> {
         // Use the from_json method
         SwapEvent::from_json(json_data)
     }

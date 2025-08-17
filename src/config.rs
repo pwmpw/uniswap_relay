@@ -149,25 +149,35 @@ impl AppConfig {
     pub fn validate_detailed(&self) -> Result<(), crate::error::DAppError> {
         // Validate application config
         if self.application.log_level.is_empty() {
-            return Err(crate::error::DAppError::Validation("Log level is required".to_string()));
+            return Err(crate::error::DAppError::Validation(
+                "Log level is required".to_string(),
+            ));
         }
         if self.application.environment.is_empty() {
-            return Err(crate::error::DAppError::Validation("Environment is required".to_string()));
+            return Err(crate::error::DAppError::Validation(
+                "Environment is required".to_string(),
+            ));
         }
 
         // Validate monitoring config
         if self.monitoring.log_format.is_empty() {
-            return Err(crate::error::DAppError::Validation("Log format is required".to_string()));
+            return Err(crate::error::DAppError::Validation(
+                "Log format is required".to_string(),
+            ));
         }
 
         // Validate rate limiting config
         if self.rate_limiting.max_subgraph_requests_per_second == 0 {
-            return Err(crate::error::DAppError::RateLimit("Rate limiting requests per second must be greater than 0".to_string()));
+            return Err(crate::error::DAppError::RateLimit(
+                "Rate limiting requests per second must be greater than 0".to_string(),
+            ));
         }
 
         // Validate retry config
         if self.retry.max_attempts == 0 {
-            return Err(crate::error::DAppError::Validation("Retry max attempts must be greater than 0".to_string()));
+            return Err(crate::error::DAppError::Validation(
+                "Retry max attempts must be greater than 0".to_string(),
+            ));
         }
 
         Ok(())
@@ -176,10 +186,14 @@ impl AppConfig {
     /// Check if configuration has timeout issues
     pub fn check_timeout_config(&self) -> Result<(), crate::error::DAppError> {
         if self.subgraph.timeout_seconds == 0 {
-            return Err(crate::error::DAppError::Timeout("Subgraph timeout must be greater than 0".to_string()));
+            return Err(crate::error::DAppError::Timeout(
+                "Subgraph timeout must be greater than 0".to_string(),
+            ));
         }
         if self.redis.timeout_ms == 0 {
-            return Err(crate::error::DAppError::Timeout("Redis timeout must be greater than 0".to_string()));
+            return Err(crate::error::DAppError::Timeout(
+                "Redis timeout must be greater than 0".to_string(),
+            ));
         }
         Ok(())
     }
@@ -187,32 +201,56 @@ impl AppConfig {
     /// Check Redis configuration for potential issues
     pub fn check_redis_config(&self) -> Result<(), crate::error::DAppError> {
         if self.redis.connection_pool_size == 0 {
-            return Err(crate::error::DAppError::Redis(crate::error::RedisError::Pool("Connection pool size must be greater than 0".to_string())));
+            return Err(crate::error::DAppError::Redis(
+                crate::error::RedisError::Pool(
+                    "Connection pool size must be greater than 0".to_string(),
+                ),
+            ));
         }
         if self.redis.retry_attempts == 0 {
-            return Err(crate::error::DAppError::Redis(crate::error::RedisError::Connection("Retry attempts must be greater than 0".to_string())));
+            return Err(crate::error::DAppError::Redis(
+                crate::error::RedisError::Connection(
+                    "Retry attempts must be greater than 0".to_string(),
+                ),
+            ));
         }
-        
+
         // Test Redis connection timeout scenarios
         if self.redis.timeout_ms > 30000 {
-            return Err(crate::error::DAppError::Redis(crate::error::RedisError::timeout_error("Redis timeout too high (>30s)".to_string())));
+            return Err(crate::error::DAppError::Redis(
+                crate::error::RedisError::timeout_error(
+                    "Redis timeout too high (>30s)".to_string(),
+                ),
+            ));
         }
-        
+
         // Test Redis subscribe scenarios
         if self.redis.channel.is_empty() {
-            return Err(crate::error::DAppError::Redis(crate::error::RedisError::subscribe_error("Redis channel cannot be empty".to_string())));
+            return Err(crate::error::DAppError::Redis(
+                crate::error::RedisError::subscribe_error(
+                    "Redis channel cannot be empty".to_string(),
+                ),
+            ));
         }
-        
+
         Ok(())
     }
 
     /// Check subgraph configuration for potential issues
     pub fn check_subgraph_config(&self) -> Result<(), crate::error::DAppError> {
         if self.subgraph.max_retries == 0 {
-            return Err(crate::error::DAppError::Subgraph(crate::error::SubgraphError::InvalidResponse("Max retries must be greater than 0".to_string())));
+            return Err(crate::error::DAppError::Subgraph(
+                crate::error::SubgraphError::InvalidResponse(
+                    "Max retries must be greater than 0".to_string(),
+                ),
+            ));
         }
         if self.subgraph.polling_interval_seconds == 0 {
-            return Err(crate::error::DAppError::Subgraph(crate::error::SubgraphError::Timeout("Polling interval must be greater than 0".to_string())));
+            return Err(crate::error::DAppError::Subgraph(
+                crate::error::SubgraphError::Timeout(
+                    "Polling interval must be greater than 0".to_string(),
+                ),
+            ));
         }
         Ok(())
     }
@@ -221,30 +259,54 @@ impl AppConfig {
     pub fn check_network_config(&self) -> Result<(), crate::error::DAppError> {
         // Check if URLs are valid
         if !self.subgraph.uniswap_v2_url.starts_with("http") {
-            return Err(crate::error::DAppError::Network(crate::error::NetworkError::Http("Invalid V2 subgraph URL format".to_string())));
+            return Err(crate::error::DAppError::Network(
+                crate::error::NetworkError::Http("Invalid V2 subgraph URL format".to_string()),
+            ));
         }
         if !self.subgraph.uniswap_v3_url.starts_with("http") {
-            return Err(crate::error::DAppError::Network(crate::error::NetworkError::Http("Invalid V3 subgraph URL format".to_string())));
+            return Err(crate::error::DAppError::Network(
+                crate::error::NetworkError::Http("Invalid V3 subgraph URL format".to_string()),
+            ));
         }
         if !self.redis.url.starts_with("redis://") {
-            return Err(crate::error::DAppError::Network(crate::error::NetworkError::Http("Invalid Redis URL format".to_string())));
+            return Err(crate::error::DAppError::Network(
+                crate::error::NetworkError::Http("Invalid Redis URL format".to_string()),
+            ));
         }
-        
+
         // Test WebSocket scenarios
-        if self.subgraph.uniswap_v2_url.contains("ws://") || self.subgraph.uniswap_v2_url.contains("wss://") {
-            return Err(crate::error::DAppError::Network(crate::error::NetworkError::websocket_error("WebSocket URLs not supported for subgraphs".to_string())));
+        if self.subgraph.uniswap_v2_url.contains("ws://")
+            || self.subgraph.uniswap_v2_url.contains("wss://")
+        {
+            return Err(crate::error::DAppError::Network(
+                crate::error::NetworkError::websocket_error(
+                    "WebSocket URLs not supported for subgraphs".to_string(),
+                ),
+            ));
         }
-        
+
         // Test DNS resolution scenarios
-        if self.subgraph.uniswap_v2_url.contains("localhost") && !self.application.environment.eq("development") {
-            return Err(crate::error::DAppError::Network(crate::error::NetworkError::dns_resolution_error("Localhost URLs only allowed in development".to_string())));
+        if self.subgraph.uniswap_v2_url.contains("localhost")
+            && !self.application.environment.eq("development")
+        {
+            return Err(crate::error::DAppError::Network(
+                crate::error::NetworkError::dns_resolution_error(
+                    "Localhost URLs only allowed in development".to_string(),
+                ),
+            ));
         }
-        
+
         // Test TLS scenarios
-        if self.subgraph.uniswap_v2_url.contains("http://") && self.application.environment.eq("production") {
-            return Err(crate::error::DAppError::Network(crate::error::NetworkError::tls_error("HTTP URLs not allowed in production (use HTTPS)".to_string())));
+        if self.subgraph.uniswap_v2_url.contains("http://")
+            && self.application.environment.eq("production")
+        {
+            return Err(crate::error::DAppError::Network(
+                crate::error::NetworkError::tls_error(
+                    "HTTP URLs not allowed in production (use HTTPS)".to_string(),
+                ),
+            ));
         }
-        
+
         Ok(())
     }
 
@@ -253,10 +315,24 @@ impl AppConfig {
         // Check if log format is supported
         match self.monitoring.log_format.as_str() {
             "json" | "text" => Ok(()),
-            "borsh" => Err(crate::error::DAppError::Serialization(crate::error::SerializationError::Borsh("Borsh format not supported for logging".to_string()))),
-            "hex" => Err(crate::error::DAppError::Serialization(crate::error::SerializationError::Hex("Hex format not supported for logging".to_string()))),
-            "base64" => Err(crate::error::DAppError::Serialization(crate::error::SerializationError::Base64("Base64 format not supported for logging".to_string()))),
-            _ => Err(crate::error::DAppError::Serialization(crate::error::SerializationError::Json("Unsupported log format".to_string())))
+            "borsh" => Err(crate::error::DAppError::Serialization(
+                crate::error::SerializationError::Borsh(
+                    "Borsh format not supported for logging".to_string(),
+                ),
+            )),
+            "hex" => Err(crate::error::DAppError::Serialization(
+                crate::error::SerializationError::Hex(
+                    "Hex format not supported for logging".to_string(),
+                ),
+            )),
+            "base64" => Err(crate::error::DAppError::Serialization(
+                crate::error::SerializationError::Base64(
+                    "Base64 format not supported for logging".to_string(),
+                ),
+            )),
+            _ => Err(crate::error::DAppError::Serialization(
+                crate::error::SerializationError::Json("Unsupported log format".to_string()),
+            )),
         }
     }
 
@@ -266,21 +342,29 @@ impl AppConfig {
         if self.is_production() {
             // Production-specific validations
             if self.application.log_level == "debug" {
-                return Err(crate::error::DAppError::Validation("Production environment should not use debug logging".to_string()));
+                return Err(crate::error::DAppError::Validation(
+                    "Production environment should not use debug logging".to_string(),
+                ));
             }
             if !self.monitoring.enable_metrics {
-                return Err(crate::error::DAppError::Validation("Production environment should enable metrics".to_string()));
+                return Err(crate::error::DAppError::Validation(
+                    "Production environment should enable metrics".to_string(),
+                ));
             }
             if !self.monitoring.enable_health_checks {
-                return Err(crate::error::DAppError::Validation("Production environment should enable health checks".to_string()));
+                return Err(crate::error::DAppError::Validation(
+                    "Production environment should enable health checks".to_string(),
+                ));
             }
         } else if self.is_development() {
             // Development-specific validations
             if self.application.log_level == "error" {
-                return Err(crate::error::DAppError::Validation("Development environment should use more verbose logging".to_string()));
+                return Err(crate::error::DAppError::Validation(
+                    "Development environment should use more verbose logging".to_string(),
+                ));
             }
         }
-        
+
         // Run all validation checks
         self.validate_detailed()?;
         self.check_timeout_config()?;
@@ -290,46 +374,78 @@ impl AppConfig {
         self.check_serialization_config()?;
         self.check_ethereum_config()?;
         self.check_solana_config()?;
-        
+
         Ok(())
     }
 
     /// Check Ethereum-specific configuration issues
     pub fn check_ethereum_config(&self) -> Result<(), crate::error::DAppError> {
         // Check for chain ID mismatches
-        if self.subgraph.uniswap_v2_url.contains("mainnet") && self.subgraph.uniswap_v3_url.contains("testnet") {
-            return Err(crate::error::DAppError::Ethereum(crate::error::EthereumError::ChainIdMismatch { 
-                expected: 1, // Mainnet
-                actual: 5    // Goerli testnet
-            }));
+        if self.subgraph.uniswap_v2_url.contains("mainnet")
+            && self.subgraph.uniswap_v3_url.contains("testnet")
+        {
+            return Err(crate::error::DAppError::Ethereum(
+                crate::error::EthereumError::ChainIdMismatch {
+                    expected: 1, // Mainnet
+                    actual: 5,   // Goerli testnet
+                },
+            ));
         }
-        
-        if self.subgraph.uniswap_v2_url.contains("testnet") && self.subgraph.uniswap_v3_url.contains("mainnet") {
-            return Err(crate::error::DAppError::Ethereum(crate::error::EthereumError::ChainIdMismatch { 
-                expected: 5, // Goerli testnet
-                actual: 1    // Mainnet
-            }));
+
+        if self.subgraph.uniswap_v2_url.contains("testnet")
+            && self.subgraph.uniswap_v3_url.contains("mainnet")
+        {
+            return Err(crate::error::DAppError::Ethereum(
+                crate::error::EthereumError::ChainIdMismatch {
+                    expected: 5, // Goerli testnet
+                    actual: 1,   // Mainnet
+                },
+            ));
         }
-        
+
         // Check for Ethereum-specific issues
-        if self.subgraph.uniswap_v2_url.contains("mainnet") && self.application.environment.eq("development") {
-            return Err(crate::error::DAppError::Ethereum(crate::error::EthereumError::Rpc("Mainnet URLs not recommended for development".to_string())));
+        if self.subgraph.uniswap_v2_url.contains("mainnet")
+            && self.application.environment.eq("development")
+        {
+            return Err(crate::error::DAppError::Ethereum(
+                crate::error::EthereumError::Rpc(
+                    "Mainnet URLs not recommended for development".to_string(),
+                ),
+            ));
         }
-        
-        if self.subgraph.uniswap_v3_url.contains("testnet") && self.application.environment.eq("production") {
-            return Err(crate::error::DAppError::Ethereum(crate::error::EthereumError::Contract("Testnet URLs not allowed in production".to_string())));
+
+        if self.subgraph.uniswap_v3_url.contains("testnet")
+            && self.application.environment.eq("production")
+        {
+            return Err(crate::error::DAppError::Ethereum(
+                crate::error::EthereumError::Contract(
+                    "Testnet URLs not allowed in production".to_string(),
+                ),
+            ));
         }
-        
+
         // Check for invalid addresses
-        if self.subgraph.uniswap_v2_url.contains("0x0000000000000000000000000000000000000000") {
-            return Err(crate::error::DAppError::Ethereum(crate::error::EthereumError::InvalidAddress("Zero address not allowed".to_string())));
+        if self
+            .subgraph
+            .uniswap_v2_url
+            .contains("0x0000000000000000000000000000000000000000")
+        {
+            return Err(crate::error::DAppError::Ethereum(
+                crate::error::EthereumError::InvalidAddress("Zero address not allowed".to_string()),
+            ));
         }
-        
+
         // Check for WebSocket URLs
-        if self.subgraph.uniswap_v2_url.contains("ws://") || self.subgraph.uniswap_v2_url.contains("wss://") {
-            return Err(crate::error::DAppError::Network(crate::error::NetworkError::websocket_error("WebSocket URLs not supported for Ethereum subgraphs".to_string())));
+        if self.subgraph.uniswap_v2_url.contains("ws://")
+            || self.subgraph.uniswap_v2_url.contains("wss://")
+        {
+            return Err(crate::error::DAppError::Network(
+                crate::error::NetworkError::websocket_error(
+                    "WebSocket URLs not supported for Ethereum subgraphs".to_string(),
+                ),
+            ));
         }
-        
+
         Ok(())
     }
 
@@ -337,34 +453,54 @@ impl AppConfig {
     pub fn check_solana_config(&self) -> Result<(), crate::error::DAppError> {
         // Check for Solana-specific issues (placeholder for future Solana support)
         if self.subgraph.uniswap_v2_url.contains("solana") {
-            return Err(crate::error::DAppError::Solana(crate::error::SolanaError::Program("Solana subgraphs not yet supported".to_string())));
+            return Err(crate::error::DAppError::Solana(
+                crate::error::SolanaError::Program(
+                    "Solana subgraphs not yet supported".to_string(),
+                ),
+            ));
         }
-        
+
         // Check for Solana RPC endpoints
         if self.subgraph.uniswap_v2_url.contains("solana-rpc") {
-            return Err(crate::error::DAppError::Solana(crate::error::SolanaError::Rpc("Solana RPC not yet supported".to_string())));
+            return Err(crate::error::DAppError::Solana(
+                crate::error::SolanaError::Rpc("Solana RPC not yet supported".to_string()),
+            ));
         }
-        
+
         // Check for Solana transaction formats
         if self.subgraph.uniswap_v2_url.contains("solana-tx") {
-            return Err(crate::error::DAppError::Solana(crate::error::SolanaError::Transaction("Solana transactions not yet supported".to_string())));
+            return Err(crate::error::DAppError::Solana(
+                crate::error::SolanaError::Transaction(
+                    "Solana transactions not yet supported".to_string(),
+                ),
+            ));
         }
-        
+
         // Check for Solana account formats
         if self.subgraph.uniswap_v2_url.contains("solana-account") {
-            return Err(crate::error::DAppError::Solana(crate::error::SolanaError::Account("Solana accounts not yet supported".to_string())));
+            return Err(crate::error::DAppError::Solana(
+                crate::error::SolanaError::Account("Solana accounts not yet supported".to_string()),
+            ));
         }
-        
+
         // Check for Solana commitment levels
         if self.subgraph.uniswap_v2_url.contains("commitment") {
-            let commitment = self.subgraph.uniswap_v2_url.split("commitment=").nth(1).unwrap_or("");
+            let commitment = self
+                .subgraph
+                .uniswap_v2_url
+                .split("commitment=")
+                .nth(1)
+                .unwrap_or("");
             if !["processed", "confirmed", "finalized"].contains(&commitment) {
-                return Err(crate::error::DAppError::Solana(crate::error::SolanaError::commitment_error(
-                    format!("Invalid Solana commitment level: {}", commitment)
-                )));
+                return Err(crate::error::DAppError::Solana(
+                    crate::error::SolanaError::commitment_error(format!(
+                        "Invalid Solana commitment level: {}",
+                        commitment
+                    )),
+                ));
             }
         }
-        
+
         Ok(())
     }
 }

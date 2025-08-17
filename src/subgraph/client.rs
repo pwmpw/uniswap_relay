@@ -61,32 +61,52 @@ impl SubgraphClient {
 
         debug!("Querying subgraph {}: {}", url, request_body);
 
-        let response = self
-            .client
-            .post(url)
-            .json(&request_body)
-            .send()
-            .await
-            .map_err(|e| {
-                // Check if this looks like a WebSocket error
-                if e.to_string().contains("websocket") || e.to_string().contains("ws://") || e.to_string().contains("wss://") {
-                    DAppError::Network(crate::error::NetworkError::websocket_error(format!("WebSocket error in subgraph request: {}", e)))
-                }
-                // Check if this looks like a DNS resolution error
-                else if e.to_string().contains("dns") || e.to_string().contains("resolve") || e.to_string().contains("lookup") {
-                    DAppError::Network(crate::error::NetworkError::dns_resolution_error(format!("DNS resolution error in subgraph request: {}", e)))
-                }
-                // Check if this looks like a TLS error
-                else if e.to_string().contains("tls") || e.to_string().contains("ssl") || e.to_string().contains("certificate") {
-                    DAppError::Network(crate::error::NetworkError::tls_error(format!("TLS error in subgraph request: {}", e)))
-                }
-                // Check if this looks like a Solana RPC error
-                else if e.to_string().contains("solana") || e.to_string().contains("rpc") {
-                    DAppError::Solana(crate::error::SolanaError::rpc_error(format!("Solana RPC error: {}", e)))
-                } else {
-                    DAppError::Subgraph(SubgraphError::Http(e.to_string()))
-                }
-            })?;
+        let response =
+            self.client
+                .post(url)
+                .json(&request_body)
+                .send()
+                .await
+                .map_err(|e| {
+                    // Check if this looks like a WebSocket error
+                    if e.to_string().contains("websocket")
+                        || e.to_string().contains("ws://")
+                        || e.to_string().contains("wss://")
+                    {
+                        DAppError::Network(crate::error::NetworkError::websocket_error(format!(
+                            "WebSocket error in subgraph request: {}",
+                            e
+                        )))
+                    }
+                    // Check if this looks like a DNS resolution error
+                    else if e.to_string().contains("dns")
+                        || e.to_string().contains("resolve")
+                        || e.to_string().contains("lookup")
+                    {
+                        DAppError::Network(crate::error::NetworkError::dns_resolution_error(
+                            format!("DNS resolution error in subgraph request: {}", e),
+                        ))
+                    }
+                    // Check if this looks like a TLS error
+                    else if e.to_string().contains("tls")
+                        || e.to_string().contains("ssl")
+                        || e.to_string().contains("certificate")
+                    {
+                        DAppError::Network(crate::error::NetworkError::tls_error(format!(
+                            "TLS error in subgraph request: {}",
+                            e
+                        )))
+                    }
+                    // Check if this looks like a Solana RPC error
+                    else if e.to_string().contains("solana") || e.to_string().contains("rpc") {
+                        DAppError::Solana(crate::error::SolanaError::rpc_error(format!(
+                            "Solana RPC error: {}",
+                            e
+                        )))
+                    } else {
+                        DAppError::Subgraph(SubgraphError::Http(e.to_string()))
+                    }
+                })?;
 
         if !response.status().is_success() {
             let status = response.status();
@@ -123,7 +143,7 @@ impl SubgraphClient {
                 for error_msg in &error_messages {
                     if error_msg.contains("solana") && error_msg.contains("instruction") {
                         return Err(DAppError::Solana(crate::error::SolanaError::Instruction(
-                            format!("Solana instruction error in GraphQL: {}", error_msg)
+                            format!("Solana instruction error in GraphQL: {}", error_msg),
                         )));
                     }
                 }

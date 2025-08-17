@@ -1,5 +1,5 @@
 //! Uniswap Relay DApp Library
-//! 
+//!
 //! This library provides the core functionality for monitoring Uniswap events
 //! via subgraphs and Redis pub/sub.
 
@@ -19,4 +19,4 @@ pub use model::{SwapEvent, SwapEventBuilder, TokenInfo, UniswapVersion};
 pub use redis::RedisPublisher;
 pub use service::swap_collector::SwapEventCollector;
 pub use subgraph::SubgraphClient;
-pub use telemetry::MetricsCollector; 
+pub use telemetry::MetricsCollector;
