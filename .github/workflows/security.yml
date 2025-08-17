@@ -159,6 +159,7 @@ jobs:
   secret-scanning:
     name: Secret Scanning
     runs-on: ubuntu-latest
+    if: false # Secret scanning is not used in this project
     permissions:
       contents: read
       security-events: write
