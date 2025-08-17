@@ -3,6 +3,7 @@
 [![CI](https://github.com/pwmpw/uniswap_relay/workflows/CI/badge.svg)](https://github.com/pwmpw/uniswap_relay/actions?query=workflow%3ACI)
 [![Security Scan](https://github.com/pwmpw/uniswap_relay/actions/workflows/security.yml/badge.svg?branch=main)](https://github.com/pwmpw/uniswap_relay/actions/workflows/security.yml)
 [![Dependencies](https://github.com/pwmpw/uniswap_relay/actions/workflows/dependencies.yml/badge.svg)](https://github.com/pwmpw/uniswap_relay/actions/workflows/dependencies.yml)
+[![Testcontainers](https://img.shields.io/badge/testcontainers-✓-brightgreen?style=flat&logo=docker)](https://testcontainers.com/)
 
 High-performance, production-ready DApp for monitoring Uniswap V2 and V3 swap events via The Graph subgraphs, with data enrichment and Redis pub/sub publishing.
 

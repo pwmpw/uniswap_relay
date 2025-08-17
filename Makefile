@@ -60,6 +60,11 @@ help: ## Show this help message
 	@echo "  make build ENV=production"
 	@echo "  make test VERSION=v1.0.0"
 	@echo "  make docker-build DOCKER_TAG=latest"
+	@echo ""
+	@echo "CI Pipeline:"
+	@echo "  make ci              # Run CI pipeline for current platform"
+	@echo "  make ci-full         # Run full CI pipeline for all platforms"
+	@echo "  make install-targets # Install Rust targets for multi-platform builds"
 
 # Development targets
 .PHONY: dev
@@ -101,6 +106,11 @@ check-all: ## Check code for all targets
 		echo "Checking $$target..."; \
 		$(CARGO) check --target $$target --all-features || exit 1; \
 	done
+
+.PHONY: check-current
+check-current: ## Check code for current platform only
+	@echo "🔍 Checking code for current platform..."
+	$(CARGO) check --all-features
 
 # Building targets
 .PHONY: build
@@ -150,7 +160,30 @@ clean-all: ## Clean all artifacts including dependencies
 .PHONY: test
 test: ## Run all tests
 	@echo "🧪 Running tests..."
-	$(CARGO) test $(CARGO_TEST_FLAGS) $(CARGO_FLAGS)
+	$(CARGO) test $(CARGO_TEST_FLAGS)
+
+.PHONY: test-integration
+test-integration: ## Run integration tests with testcontainers
+	@echo "🧪 Running integration tests..."
+	@echo "Starting test containers..."
+	$(DOCKER_COMPOSE) -f $(DOCKER_DIR)/docker-compose.test.yml up -d redis-test
+	@echo "Waiting for Redis to be ready..."
+	@sleep 5
+	$(CARGO) test --test testcontainers_tests --features "testcontainers"
+	@echo "Cleaning up test containers..."
+	$(DOCKER_COMPOSE) -f $(DOCKER_DIR)/docker-compose.test.yml down
+
+.PHONY: test-all
+test-all: ## Run all tests including integration tests
+	@echo "🧪 Running all tests..."
+	$(MAKE) test
+	$(MAKE) test-integration
+
+.PHONY: test-local
+test-local: ## Run integration tests against local services
+	@echo "🧪 Running integration tests against local services..."
+	@echo "Make sure Redis is running on localhost:6379"
+	$(CARGO) test --test testcontainers_tests --features "testcontainers" -- --nocapture $(CARGO_FLAGS)
 	@echo "✅ Tests completed!"
 
 .PHONY: test-unit
@@ -377,6 +410,15 @@ install-tools: ## Install development tools
 	cargo install cargo-watch cargo-tarpaulin cargo-audit --version 0.18 cargo-outdated cargo-upgrade
 	@echo "✅ Development tools installed!"
 
+.PHONY: install-targets
+install-targets: ## Install Rust targets for multi-platform builds
+	@echo "🔧 Installing Rust targets for multi-platform builds..."
+	@for target in $(TARGETS); do \
+		echo "Installing target $$target..."; \
+		$(RUSTUP) target add $$target || echo "Warning: Failed to install target $$target"; \
+	done
+	@echo "✅ Rust targets installed!"
+
 .PHONY: check-tools
 check-tools: ## Check if required tools are installed
 	@echo "🔍 Checking required tools..."
@@ -447,13 +489,24 @@ pre-commit: ## Run pre-commit checks
 ci: ## Run CI pipeline locally
 	@echo "🚀 Running CI pipeline locally..."
 	@$(MAKE) clean
+	@$(MAKE) check-current
+	@$(MAKE) build
+	@$(MAKE) clippy
+	@$(MAKE) test
+	@$(MAKE) audit
+	@echo "✅ CI pipeline completed successfully!"
+
+.PHONY: ci-full
+ci-full: ## Run full CI pipeline with multi-platform checks
+	@echo "🚀 Running full CI pipeline with multi-platform checks..."
+	@$(MAKE) clean
 	@$(MAKE) check-all
 	@$(MAKE) build-all
 	@$(MAKE) clippy
 	@$(MAKE) test
 	@$(MAKE) audit
 	@$(MAKE) docker-build
-	@echo "✅ CI pipeline completed successfully!"
+	@echo "✅ Full CI pipeline completed successfully!"
 
 # Release targets
 .PHONY: release

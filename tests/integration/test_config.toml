@@ -1,0 +1,36 @@
+# Test configuration for integration tests
+[application]
+name = "uniswap_relay_test"
+version = "0.1.0"
+log_level = "debug"
+environment = "test"
+
+[monitoring]
+enable_metrics = true
+enable_health_checks = true
+metrics_interval_seconds = 1
+log_format = "json"
+
+[redis]
+url = "redis://localhost:6379"
+channel = "test_swaps"
+timeout_ms = 5000
+max_connections = 10
+
+[subgraph]
+uniswap_v2_url = "https://api.thegraph.com/subgraphs/name/uniswap/uniswap-v2"
+uniswap_v3_url = "https://api.thegraph.com/subgraphs/name/uniswap/uniswap-v3"
+polling_interval_seconds = 1
+request_timeout_ms = 10000
+max_retries = 3
+
+[rate_limiting]
+max_subgraph_requests_per_second = 10
+burst_size = 20
+window_size_seconds = 60
+
+[retry]
+max_attempts = 3
+initial_delay_ms = 100
+max_delay_ms = 5000
+backoff_multiplier = 2.0 

@@ -51,6 +51,18 @@ tracing-appender = "0.2"
 tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
 uuid = { version = "1.6", features = ["v4", "serde"] }
 
+[features]
+default = []
+testcontainers = []
+
+[dev-dependencies]
+# Test containers for integration testing
+testcontainers = "0.15"
+testcontainers-modules = { version = "0.3", features = ["redis"] }
+# Additional testing utilities
+mockall = "0.12"
+wiremock = "0.5"
+
 [profile.release]
 opt-level = 3
 lto = true
